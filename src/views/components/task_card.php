@@ -60,29 +60,56 @@
     </div>
 
     <div class="flex gap-1 mt-2 pt-2 border-t border-gray-100">
-        <?php if (($task['status'] ?? 'todo') !== 'doing'): ?>
-        <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
-            <input type="hidden" name="action"  value="update_status">
-            <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
-            <input type="hidden" name="status"  value="doing">
-            <button type="submit"
-                    class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded transition-colors">
-                → Doing
-            </button>
-        </form>
+
+        <?php $currentStatus = $task['status'] ?? 'todo'; ?>
+
+        <?php if ($currentStatus === 'todo'): ?>
+            <!-- Todo → hanya bisa maju ke Doing -->
+            <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
+                <input type="hidden" name="action"  value="update_status">
+                <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
+                <input type="hidden" name="status"  value="doing">
+                <button type="submit"
+                        class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded transition-colors">
+                    ▶ Doing
+                </button>
+            </form>
+
+        <?php elseif ($currentStatus === 'doing'): ?>
+            <!-- Doing → bisa mundur ke Todo atau maju ke Done -->
+            <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
+                <input type="hidden" name="action"  value="update_status">
+                <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
+                <input type="hidden" name="status"  value="todo">
+                <button type="submit"
+                        class="text-xs bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-2 py-1 rounded transition-colors">
+                    ↩ Todo
+                </button>
+            </form>
+            <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
+                <input type="hidden" name="action"  value="update_status">
+                <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
+                <input type="hidden" name="status"  value="done">
+                <button type="submit"
+                        class="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-2 py-1 rounded transition-colors">
+                    ✓ Done
+                </button>
+            </form>
+
+        <?php elseif ($currentStatus === 'done'): ?>
+            <!-- Done → hanya bisa mundur ke Doing -->
+            <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
+                <input type="hidden" name="action"  value="update_status">
+                <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
+                <input type="hidden" name="status"  value="doing">
+                <button type="submit"
+                        class="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded transition-colors">
+                    ↩ Doing
+                </button>
+            </form>
+
         <?php endif; ?>
 
-        <?php if (($task['status'] ?? 'todo') !== 'done'): ?>
-        <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
-            <input type="hidden" name="action"  value="update_status">
-            <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
-            <input type="hidden" name="status"  value="done">
-            <button type="submit"
-                    class="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-2 py-1 rounded transition-colors">
-                ✓ Done
-            </button>
-        </form>
-        <?php endif; ?>
     </div>
 </div>
 
