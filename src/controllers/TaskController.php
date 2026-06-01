@@ -92,6 +92,59 @@ function updateTaskStatus(PDO $pdo): void
     exit;
 }
 
+function assignMemberToTask(PDO $pdo): void
+{
+    $task_id = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
+    $user_ids = $_POST['user_ids'] ?? [];
+
+    if ($task_id <= 0) {
+        $_SESSION['error'] = "Task tidak valid.";
+        header('Location: ../../public/index.php');
+        exit;
+    }
+
+    try {
+
+        $pdo->beginTransaction();
+
+        $deleteStmt = $pdo->prepare(
+            "DELETE FROM task_assignees WHERE task_id = :task_id"
+        );
+
+        $deleteStmt->bindValue(':task_id', $task_id, PDO::PARAM_INT);
+        $deleteStmt->execute();
+
+        if (!empty($user_ids)) {
+
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO task_assignees (task_id, user_id)
+                 VALUES (:task_id, :user_id)"
+            );
+
+            foreach ($user_ids as $user_id) {
+
+                $insertStmt->execute([
+                    ':task_id' => $task_id,
+                    ':user_id' => (int)$user_id
+                ]);
+            }
+        }
+
+        $pdo->commit();
+
+        $_SESSION['success'] = "Member berhasil di-assign.";
+
+    } catch (PDOException $e) {
+
+        $pdo->rollBack();
+
+        $_SESSION['error'] = "Gagal assign member.";
+    }
+
+    header('Location: ../../public/index.php');
+    exit;
+}
+
 $pdo = Database::getConnection();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -100,6 +153,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             createTask($pdo);
             break;
 
+        case 'update_status':
+            updateTaskStatus($pdo);
+            break;
+
+        case 'assign_member':
+            assignMemberToTask($pdo);
+            break;
 
         default:
             header('Location: ../../public/index.php');
