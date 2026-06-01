@@ -61,6 +61,37 @@ function createTask(PDO $pdo): void
     exit;
 }
 
+function updateTaskStatus(PDO $pdo): void
+{
+    $task_id    = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
+    $new_status = trim($_POST['status'] ?? '');
+
+    // Whitelist status yang diizinkan
+    $allowed = ['todo', 'doing', 'done'];
+
+    if ($task_id <= 0 || !in_array($new_status, $allowed, true)) {
+        $_SESSION['error'] = "Status tidak valid.";
+        header('Location: ../../public/index.php');
+        exit;
+    }
+
+    try {
+        // Prepared statement — aman dari SQL Injection
+        $stmt = $pdo->prepare("UPDATE tasks SET status = :status WHERE id = :id");
+        $stmt->bindParam(':status', $new_status, PDO::PARAM_STR);
+        $stmt->bindParam(':id',     $task_id,    PDO::PARAM_INT);
+        $stmt->execute();
+
+        $_SESSION['success'] = "Status tugas berhasil diperbarui!";
+    } catch (PDOException $e) {
+        error_log('[TaskController] updateTaskStatus error: ' . $e->getMessage());
+        $_SESSION['error'] = "Gagal memperbarui status. Silakan coba lagi.";
+    }
+
+    header('Location: ../../public/index.php');
+    exit;
+}
+
 $pdo = Database::getConnection();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -75,3 +106,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
     }
 }
+
