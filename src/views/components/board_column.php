@@ -58,7 +58,8 @@ $task_count = count($column['tasks']);
                     <?= $task_count ?>
                 </span>
             </div>
-            <button class="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/40
+            <button onclick="document.getElementById('modalCreateTask').classList.remove('hidden')"
+                    class="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700/40
                            transition-colors duration-200"
                     aria-label="Tambah tugas ke kolom <?= htmlspecialchars($column['title']) ?>">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,78 +84,8 @@ $task_count = count($column['tasks']);
         </div>
         <?php endif; ?>
 
-        <?php foreach ($column['tasks'] as $task):
-            $p          = $priority_config[$task['priority']] ?? $priority_config['low'];
-            $deadline   = strtotime($task['deadline']);
-            $is_overdue = $deadline < time() && $column['status'] !== 'done';
-            $date_label = date('d M Y', $deadline);
-        ?>
-        <div class="card-transition bg-dark-900/60 border border-slate-700/40 hover:border-slate-600/70
-                    rounded-xl p-4 cursor-pointer group shadow-sm">
-
-            <!-- Priority Badge -->
-            <div class="flex items-center justify-between mb-3">
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full <?= $p['badge'] ?>">
-                    <span class="w-1.5 h-1.5 rounded-full <?= $p['dot'] ?>"></span>
-                    <?= $p['label'] ?>
-                </span>
-
-                <button class="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-500
-                               hover:text-white hover:bg-slate-700/60 transition-all duration-200"
-                        aria-label="Opsi tugas">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Title & Description -->
-            <h4 class="text-sm font-semibold text-white leading-snug mb-1.5">
-                <?= htmlspecialchars($task['title']) ?>
-            </h4>
-            <p class="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-4">
-                <?= htmlspecialchars($task['desc']) ?>
-            </p>
-
-            <!-- Footer: Assignees & Deadline -->
-            <div class="flex items-center justify-between">
-
-                <!-- Assignee Avatars -->
-                <div class="flex -space-x-2">
-                    <?php foreach ($task['assignees'] as $i => $initial):
-                        if ($i >= 3): ?>
-                        <div class="w-6 h-6 rounded-full bg-slate-700 border-2 border-dark-900
-                                    flex items-center justify-center text-slate-400 text-[9px] font-bold z-10">
-                            +<?= count($task['assignees']) - 3 ?>
-                        </div>
-                        <?php break; endif; ?>
-                        <div class="w-6 h-6 rounded-full bg-primary-600 border-2 border-dark-900
-                                    flex items-center justify-center text-white text-[9px] font-bold"
-                             style="z-index: <?= 10 - $i ?>">
-                            <?= htmlspecialchars(strtoupper($initial)) ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Deadline -->
-                <div class="flex items-center gap-1 text-xs
-                            <?= $column['status'] === 'done'
-                                ? 'text-emerald-500'
-                                : ($is_overdue ? 'text-red-400' : 'text-slate-500') ?>">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                    <?php if ($column['status'] === 'done'): ?>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    <?php endif; ?>
-                    <?= $date_label ?>
-                </div>
-
-            </div>
-        </div>
+        <?php foreach ($column['tasks'] as $task): ?>
+            <?php include __DIR__ . '/task_card.php'; ?>
         <?php endforeach; ?>
 
     </div>
