@@ -2,7 +2,7 @@
 // public/index.php
 // Ditulis oleh: Bima Baraja
 // Deskripsi: Halaman utama Kanban Board — menampilkan 3 kolom (Todo, Doing, Done)
-//             beserta navbar dan card tugas dummy untuk demonstrasi UI.
+//             beserta navbar dan card tugas dinamis dari database.
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -15,69 +15,83 @@ if (empty($_SESSION['logged_in'])) {
 
 $current_user = $_SESSION['username'] ?? 'User';
 
+// Muat koneksi database
+require_once __DIR__ . '/../src/config/database.php';
+
+// Ambil semua user teregistrasi untuk dropdown assignees
+$all_users = [];
+try {
+    $stmt_users = $pdo->query("SELECT id, username FROM users ORDER BY username ASC");
+    $all_users = $stmt_users->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Gagal mengambil users: " . $e->getMessage());
+}
+
+// Inisialisasi struktur kolom default
+$tasks_by_status = [
+    'todo'  => [],
+    'doing' => [],
+    'done'  => [],
+];
+
+try {
+    // Ambil semua task dari database
+    $stmt_tasks = $pdo->query("SELECT * FROM tasks ORDER BY created_at DESC");
+    $db_tasks = $stmt_tasks->fetchAll(PDO::FETCH_ASSOC);
+
+    // Ambil relasi penugasan tugas (assignees)
+    $assignees_by_task = [];
+    $stmt_assignees = $pdo->query("
+        SELECT ta.task_id, u.id as user_id, u.username
+        FROM task_assignees ta
+        JOIN users u ON ta.user_id = u.id
+    ");
+    while ($row = $stmt_assignees->fetch(PDO::FETCH_ASSOC)) {
+        $assignees_by_task[$row['task_id']][] = [
+            'id'       => $row['user_id'],
+            'username' => $row['username'],
+        ];
+    }
+
+    // Kelompokkan tugas berdasarkan statusnya
+    foreach ($db_tasks as $task) {
+        $status = strtolower($task['status'] ?? 'todo');
+        if (!array_key_exists($status, $tasks_by_status)) {
+            $status = 'todo';
+        }
+        
+        $tasks_by_status[$status][] = [
+            'id'            => $task['id'],
+            'title'         => $task['title'],
+            'description'   => $task['description'],
+            'priority'      => $task['priority'] ?? 'medium',
+            'deadline_date' => $task['deadline_date'],
+            'status'        => $status,
+            'assignees'     => $assignees_by_task[$task['id']] ?? [],
+        ];
+    }
+} catch (PDOException $e) {
+    error_log("Gagal mengambil data tugas: " . $e->getMessage());
+}
+
 $columns = [
     [
         'id'     => 'todo',
         'title'  => 'Todo',
         'status' => 'todo',
-        'tasks'  => [
-            [
-                'title'     => 'Design landing page mockup',
-                'desc'      => 'Buat wireframe dan mockup high-fidelity untuk halaman utama.',
-                'priority'  => 'high',
-                'deadline'  => '2025-06-10',
-                'assignees' => ['H', 'B'],
-            ],
-            [
-                'title'     => 'Setup CI/CD pipeline',
-                'desc'      => 'Konfigurasi GitHub Actions untuk automated testing dan deployment.',
-                'priority'  => 'medium',
-                'deadline'  => '2025-06-15',
-                'assignees' => ['R'],
-            ],
-        ],
+        'tasks'  => $tasks_by_status['todo'],
     ],
     [
         'id'     => 'doing',
         'title'  => 'Doing',
         'status' => 'doing',
-        'tasks'  => [
-            [
-                'title'     => 'Implementasi sistem autentikasi',
-                'desc'      => 'Bangun login, register, dan session management dengan PHP native.',
-                'priority'  => 'high',
-                'deadline'  => '2025-06-08',
-                'assignees' => ['H', 'F'],
-            ],
-            [
-                'title'     => 'Kanban Board UI',
-                'desc'      => 'Buat tampilan board responsif dengan komponen PHP reusable.',
-                'priority'  => 'medium',
-                'deadline'  => '2025-06-09',
-                'assignees' => ['B'],
-            ],
-        ],
+        'tasks'  => $tasks_by_status['doing'],
     ],
     [
         'id'     => 'done',
         'title'  => 'Done',
         'status' => 'done',
-        'tasks'  => [
-            [
-                'title'     => 'Desain skema database',
-                'desc'      => 'Definisikan tabel users, tasks, assignees, dan comments.',
-                'priority'  => 'high',
-                'deadline'  => '2025-06-01',
-                'assignees' => ['R', 'F'],
-            ],
-            [
-                'title'     => 'Setup repository proyek',
-                'desc'      => 'Inisialisasi Git repo, struktur folder, dan dokumentasi README.',
-                'priority'  => 'low',
-                'deadline'  => '2025-05-30',
-                'assignees' => ['H'],
-            ],
-        ],
+        'tasks'  => $tasks_by_status['done'],
     ],
 ];
 ?>
@@ -88,47 +102,8 @@ $columns = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Board — Ganbat</title>
     <meta name="description" content="Kanban board manajemen tugas tim Ganbat.">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50:  '#eff6ff',
-                            100: '#dbeafe',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        },
-                        dark: {
-                            800: '#1e293b',
-                            900: '#0f172a',
-                            950: '#020617',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
-                    },
-                    animation: {
-                        'fade-in':  'fadeIn 0.5s ease-out',
-                        'slide-up': 'slideUp 0.4s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%':   { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%':   { opacity: '0', transform: 'translateY(20px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS (Local via style.css) -->
+    <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -157,7 +132,8 @@ $columns = [
                 <h2 class="text-2xl font-bold text-white tracking-tight">Project Board</h2>
                 <p class="text-slate-400 text-sm mt-0.5">Sprint 1 &mdash; Juni 2025</p>
             </div>
-            <button class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 active:bg-primary-700
+            <button onclick="document.getElementById('modalCreateTask').classList.remove('hidden')"
+                    class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 active:bg-primary-700
                            text-white text-sm font-semibold px-4 py-2.5 rounded-xl
                            transition-all duration-200 shadow-lg shadow-primary-600/30
                            hover:scale-[1.02] active:scale-[0.98] self-start sm:self-auto">
@@ -180,6 +156,87 @@ $columns = [
     <footer class="relative text-center text-xs text-slate-600 py-6 mt-4">
         &copy; <?= date('Y') ?> Ganbat &mdash; Sistem Manajemen Tugas
     </footer>
+
+    <!-- Modal Create Task -->
+    <div id="modalCreateTask"
+         class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-dark-800 border border-slate-700/80 rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-slide-up text-white">
+            <button onclick="document.getElementById('modalCreateTask').classList.add('hidden')"
+                    class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <h2 class="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-8 h-8 bg-primary-600/20 text-primary-400 rounded-lg">➕</span>
+                Buat Tugas Baru
+            </h2>
+
+            <form method="POST" action="../src/controllers/TaskController.php">
+                <input type="hidden" name="action" value="create_task">
+
+                <div class="mb-4">
+                    <label for="title" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Judul Tugas <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="title" name="title" required
+                           placeholder="Contoh: Desain halaman login"
+                           class="w-full bg-dark-900 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500
+                                  focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all">
+                </div>
+
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Deskripsi
+                    </label>
+                    <textarea id="description" name="description" rows="3"
+                              placeholder="Jelaskan detail tugas ini..."
+                              class="w-full bg-dark-900 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500
+                                     focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="priority" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Prioritas
+                    </label>
+                    <select id="priority" name="priority"
+                            class="w-full bg-dark-900 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white
+                                   focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all">
+                        <option value="low">🟢 Rendah (Low)</option>
+                        <option value="medium" selected>🟡 Sedang (Medium)</option>
+                        <option value="high">🔴 Tinggi (High)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label for="deadline_date" class="block text-sm font-medium text-slate-300 mb-1.5">
+                        Deadline
+                    </label>
+                    <input type="date" id="deadline_date" name="deadline_date"
+                           class="w-full bg-dark-900 border border-slate-600 rounded-xl px-3.5 py-2.5 text-sm text-white
+                                  focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all">
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit"
+                            class="flex-1 bg-primary-600 hover:bg-primary-500 active:bg-primary-700 text-white font-semibold
+                                   py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-primary-600/30">
+                        Buat Tugas
+                    </button>
+                    <button type="button"
+                            onclick="document.getElementById('modalCreateTask').classList.add('hidden')"
+                            class="flex-1 border border-slate-600 hover:bg-slate-700/40 text-slate-300
+                                   font-semibold py-2.5 rounded-xl text-sm transition-all">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Countdown Realtime -->
+    <script src="js/countdown.js"></script>
 
 </body>
 </html>

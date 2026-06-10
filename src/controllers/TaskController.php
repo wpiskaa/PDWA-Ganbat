@@ -145,7 +145,7 @@ function assignMemberToTask(PDO $pdo): void
     exit;
 }
 
-$pdo = Database::getConnection();
+// $pdo is already initialized in src/config/database.php and available in the global scope
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     switch ($_POST['action']) {

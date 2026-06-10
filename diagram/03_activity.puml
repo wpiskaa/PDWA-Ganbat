@@ -1,0 +1,216 @@
+@startuml 03_Activity_Diagram
+title Ganbat — Activity Diagram (Alur Lengkap Sistem)
+
+skinparam backgroundColor #ffffffff
+skinparam activityBorderColor #7C6AF5
+skinparam activityBackgroundColor #2A2A3E
+skinparam activityFontColor #CCCCFF
+skinparam activityDiamondBorderColor #7C6AF5
+skinparam activityDiamondBackgroundColor #3A2A5E
+skinparam activityDiamondFontColor #CCCCFF
+skinparam partitionBorderColor #555577
+skinparam partitionBackgroundColor #22223A
+skinparam partitionFontColor #AAAACC
+skinparam arrowColor #7C6AF5
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam noteBackgroundColor #2E2E45
+skinparam noteBorderColor #7C6AF5
+
+|Pengguna|
+start
+:Buka Aplikasi Ganbat;
+
+' =========================================
+' CEK SESSION
+' =========================================
+if (Session logged_in = true?) then (Ya)
+  :Tampil Kanban Board;
+else (Tidak)
+
+  ' =========================================
+  ' AUTENTIKASI
+  ' =========================================
+  |Pengguna|
+  if (Punya Akun?) then (Ya)
+
+    |Pengguna|
+    :Buka Halaman Login;
+    :Isi form (username, password);
+    :Submit Form Login;
+
+    |AuthController|
+    :Validasi field tidak kosong;
+    if (Validasi Lolos?) then (Ya)
+      :Query SELECT users WHERE username;
+      if (User Ditemukan?) then (Ya)
+        :password_verify(input, hash);
+        if (Password Cocok?) then (Ya)
+          :Buat SESSION\n(user_id, username, logged_in=true);
+          :Redirect → index.php;
+        else (Tidak)
+          :Set SESSION error\n"Username/password salah";
+          :Redirect → login.php;
+          |Pengguna|
+          :Tampil Pesan Error;
+          stop
+        end if
+      else (Tidak Ditemukan)
+        :Set SESSION error;
+        :Redirect → login.php;
+        |Pengguna|
+        :Tampil Pesan Error;
+        stop
+      end if
+    else (Tidak)
+      :Set SESSION error\n"Kolom wajib diisi";
+      :Redirect → login.php;
+      |Pengguna|
+      :Tampil Pesan Error;
+      stop
+    end if
+
+  else (Belum Punya Akun)
+
+    |Pengguna|
+    :Buka Halaman Register;
+    :Isi form\n(username, password, confirm_password);
+    :Submit Form Register;
+
+    |AuthController|
+    :Validasi field tidak kosong;
+    :Validasi panjang username (3–50 karakter);
+    :Validasi panjang password (min 6 karakter);
+    :Validasi password == confirm_password;
+    if (Semua Validasi Lolos?) then (Ya)
+      :Query SELECT users WHERE username\n(cek duplikat);
+      if (Username Sudah Ada?) then (Ya)
+        :Set SESSION error\n"Username sudah digunakan";
+        :Redirect → register.php;
+        |Pengguna|
+        :Tampil Pesan Error;
+        stop
+      else (Belum Ada)
+        :password_hash(password, BCRYPT);
+        :INSERT INTO users;
+        :Set SESSION success\n"Registrasi berhasil";
+        :Redirect → login.php;
+        |Pengguna|
+        :Tampil Pesan Sukses;
+        stop
+      end if
+    else (Tidak Lolos)
+      :Set SESSION error;
+      :Redirect → register.php;
+      |Pengguna|
+      :Tampil Pesan Error;
+      stop
+    end if
+
+  end if
+
+end if
+
+' =========================================
+' HALAMAN UTAMA — KANBAN BOARD
+' =========================================
+|index.php|
+:Query semua tasks\nORDER BY created_at DESC;
+:Query task_assignees JOIN users;
+:Kelompokkan tasks\nberdasarkan status\n(todo / doing / done);
+:Render board 3 kolom;
+:Hitung & tampilkan\nstatus deadline tiap task;
+
+|Pengguna|
+:Lihat Kanban Board;
+
+' =========================================
+' PILIH AKSI
+' =========================================
+repeat
+  :Pilih Aksi;
+
+  ' --------- BUAT TUGAS ---------
+  if (Aksi = Buat Tugas?) then (Ya)
+    :Isi form\n(title, description, priority, deadline);
+    :Submit;
+
+    |TaskController|
+    :Validasi title tidak kosong;
+    :Validasi priority whitelist\n[low, medium, high];
+    :Validasi format tanggal deadline;
+    if (Validasi OK?) then (Ya)
+      :INSERT INTO tasks\n(status default = 'todo');
+      :Set SESSION success;
+    else (Tidak)
+      :Set SESSION error;
+    end if
+    :Redirect → index.php;
+
+  ' --------- UPDATE STATUS ---------
+  else if (Aksi = Update Status?) then (Ya)
+    :Klik tombol status\n(▶ Doing / ✓ Done / ↩ Todo);
+
+    |TaskController|
+    :Validasi task_id > 0;
+    :Validasi status dalam\nwhitelist [todo, doing, done];
+    if (Validasi OK?) then (Ya)
+      :UPDATE tasks SET status = :status\nWHERE id = :id;
+      :Set SESSION success;
+    else (Tidak)
+      :Set SESSION error;
+    end if
+    :Redirect → index.php;
+
+  ' --------- ASSIGN MEMBER ---------
+  else if (Aksi = Assign Member?) then (Ya)
+    :Klik "Delegasi",\nPilih member (checkbox),\nKlik Simpan;
+
+    |TaskController|
+    :Validasi task_id > 0;
+    :BEGIN TRANSACTION;
+    :DELETE task_assignees\nWHERE task_id = :task_id;
+    :Loop INSERT task_assignees\ntiap user_id yang dipilih;
+    if (Semua INSERT Berhasil?) then (Ya)
+      :COMMIT;
+      :Set SESSION success;
+    else (Tidak)
+      :ROLLBACK;
+      :Set SESSION error;
+    end if
+    :Redirect → index.php;
+
+  ' --------- KOMENTAR ---------
+  else if (Aksi = Tambah Komentar?) then (Ya)
+    :Klik "Diskusi",\nTulis komentar,\nKlik Submit;
+
+    |CommentController|
+    :Validasi SESSION user_id ada;
+    :Validasi task_id & comment tidak kosong;
+    if (Validasi OK?) then (Ya)
+      :INSERT INTO comments\n(task_id, user_id, comment_text, NOW());
+    end if
+    :Redirect → index.php;
+
+  ' --------- LOGOUT ---------
+  else if (Aksi = Logout?) then (Ya)
+    |AuthController|
+    :SESSION = [];
+    :session_destroy();
+    :Hapus cookie session;
+    :Redirect → login.php;
+    |Pengguna|
+    :Tampil halaman login;
+    stop
+
+  end if
+
+  |Pengguna|
+  :Lihat board yang diperbarui;
+
+repeat while (Lanjut Menggunakan Aplikasi?) is (Ya)
+-> Tidak;
+
+stop
+
+@enduml

@@ -29,8 +29,8 @@ if (session_status() === PHP_SESSION_NONE) {
  
     <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' — Ganbat' : 'Ganbat' ?></title>
  
-    <!-- Tailwind CSS via CDN (sesuai stack proyek) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Local via style.css) -->
+    <link rel="stylesheet" href="/Ganbat-project/public/css/style.css">
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
     <!-- Isi tiap halaman akan ditulis setelah baris ini -->
