@@ -215,7 +215,7 @@ cd C:\laragon\www
 cd C:\xampp\htdocs
 
 # Jalankan perintah kloning
-git clone <url-repositori-github-anda> ganbat
+git clone https://github.com/spicyshibe/PDWA-Ganbat.git ganbat
 cd ganbat
 
 Langkah 2: Impor Basis Data (Database Setup)

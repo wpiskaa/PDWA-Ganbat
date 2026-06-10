@@ -54,3 +54,10 @@ CREATE TABLE `comments` (
   CONSTRAINT `fk_comments_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_comments_tasks` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- (Opsional) Data contoh untuk testing.
+-- Hapus blok ini kalau tidak diperlukan.
+-- ============================================================
+-- INSERT INTO users (username, password) VALUES
+-- ('gandhi', '$2y$10$contohhashpasswordsaja');
