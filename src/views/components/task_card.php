@@ -1,176 +1,185 @@
 <?php
+// src/views/components/task_card.php
+// Deskripsi: Komponen kartu tugas untuk Kanban Board.
+//             Menerima variabel $task dari board_column.php.
+//             Menerima variabel $all_users dari index.php.
+
+// Setup prioritas dan gaya
+$priority_map = [
+    'high'   => [
+        'label' => 'Tinggi',
+        'badge' => 'bg-red-500/10 text-red-400 border border-red-500/20',
+        'dot'   => 'bg-red-400',
+    ],
+    'medium' => [
+        'label' => 'Sedang',
+        'badge' => 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+        'dot'   => 'bg-amber-400',
+    ],
+    'low'    => [
+        'label' => 'Rendah',
+        'badge' => 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
+        'dot'   => 'bg-slate-500',
+    ],
+];
+
+$p = $priority_map[$task['priority'] ?? 'medium'] ?? $priority_map['medium'];
 ?>
 
-<div class="bg-white rounded-xl shadow-md p-4 mb-3 border-l-4
-    <?php
-        echo match($task['priority'] ?? 'medium') {
-            'high'   => 'border-red-500',
-            'medium' => 'border-yellow-400',
-            'low'    => 'border-green-400',
-            default  => 'border-gray-300',
-        };
-    ?> hover:shadow-lg transition-shadow duration-200">
+<div class="card-transition bg-dark-900/60 border border-slate-700/40 hover:border-slate-600/70
+            rounded-xl p-4 cursor-pointer group shadow-sm flex flex-col gap-3">
 
-    <div class="flex justify-between items-start mb-2">
-        <h3 class="font-semibold text-gray-800 text-sm leading-tight">
-            <?= htmlspecialchars($task['title'] ?? '', ENT_QUOTES, 'UTF-8') ?>
-        </h3>
-        <span class="text-xs font-medium px-2 py-0.5 rounded-full ml-2 shrink-0
-            <?php
-                echo match($task['priority'] ?? 'medium') {
-                    'high'   => 'bg-red-100 text-red-700',
-                    'medium' => 'bg-yellow-100 text-yellow-700',
-                    'low'    => 'bg-green-100 text-green-700',
-                    default  => 'bg-gray-100 text-gray-600',
-                };
-            ?>">
-            <?= ucfirst(htmlspecialchars($task['priority'] ?? 'medium', ENT_QUOTES, 'UTF-8')) ?>
+    <!-- Header: Prioritas & Tombol Opsi status -->
+    <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full <?= $p['badge'] ?>">
+            <span class="w-1.5 h-1.5 rounded-full <?= $p['dot'] ?>"></span>
+            <?= $p['label'] ?>
         </span>
+
+        <!-- Tombol Aksi Status -->
+        <div class="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+            <?php $status = $task['status'] ?? 'todo'; ?>
+            
+            <?php if ($status === 'todo'): ?>
+                <!-- Todo -> Doing -->
+                <form method="POST" action="../src/controllers/TaskController.php" class="m-0">
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
+                    <input type="hidden" name="status" value="doing">
+                    <button type="submit" class="p-1 text-xs bg-slate-800 hover:bg-primary-600/20 text-slate-400 hover:text-primary-400 rounded transition border border-transparent hover:border-primary-500/30" title="Mulai Kerja">
+                        ▶ Doing
+                    </button>
+                </form>
+            <?php elseif ($status === 'doing'): ?>
+                <!-- Doing -> Todo -->
+                <form method="POST" action="../src/controllers/TaskController.php" class="m-0">
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
+                    <input type="hidden" name="status" value="todo">
+                    <button type="submit" class="p-1 text-xs bg-slate-800 hover:bg-amber-600/20 text-slate-400 hover:text-amber-400 rounded transition border border-transparent hover:border-amber-500/30" title="Kembalikan ke Todo">
+                        ↩ Todo
+                    </button>
+                </form>
+                <!-- Doing -> Done -->
+                <form method="POST" action="../src/controllers/TaskController.php" class="m-0">
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
+                    <input type="hidden" name="status" value="done">
+                    <button type="submit" class="p-1 text-xs bg-slate-800 hover:bg-emerald-600/20 text-slate-400 hover:text-emerald-400 rounded transition border border-transparent hover:border-emerald-500/30" title="Selesaikan">
+                        ✓ Done
+                    </button>
+                </form>
+            <?php elseif ($status === 'done'): ?>
+                <!-- Done -> Doing -->
+                <form method="POST" action="../src/controllers/TaskController.php" class="m-0">
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
+                    <input type="hidden" name="status" value="doing">
+                    <button type="submit" class="p-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded transition border border-transparent hover:border-slate-600" title="Kerjakan Kembali">
+                        ↩ Doing
+                    </button>
+                </form>
+            <?php endif; ?>
+        </div>
     </div>
 
-    <?php if (!empty($task['description'])): ?>
-        <p class="text-xs text-gray-500 mb-3 line-clamp-2">
-            <?= htmlspecialchars($task['description'], ENT_QUOTES, 'UTF-8') ?>
-        </p>
-    <?php endif; ?>
+    <!-- Judul & Deskripsi -->
+    <div>
+        <h4 class="text-sm font-semibold text-white leading-snug mb-1">
+            <?= htmlspecialchars($task['title']) ?>
+        </h4>
+        <?php if (!empty($task['description'])): ?>
+            <p class="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                <?= htmlspecialchars($task['description']) ?>
+            </p>
+        <?php endif; ?>
+    </div>
 
-    <!-- Deadline -->
+    <!-- Real-time Countdown (Sesuai countdown.js) -->
     <?php if (!empty($task['deadline_date'])): ?>
-        <?php
-            $today    = new DateTime('today');
-            $deadline = new DateTime($task['deadline_date']);
-            $isOverdue = ($deadline < $today && ($task['status'] ?? '') !== 'done');
-        ?>
-        <div class="flex items-center gap-1 mb-3">
-            <svg class="w-3 h-3 <?= $isOverdue ? 'text-red-500' : 'text-gray-400' ?>"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <span class="text-xs <?= $isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500' ?>">
-                <?= $isOverdue ? '⚠ Overdue: ' : '' ?>
-                <?= htmlspecialchars(date('d M Y', strtotime($task['deadline_date'])), ENT_QUOTES, 'UTF-8') ?>
+        <div class="task-countdown mt-1" data-deadline="<?= htmlspecialchars($task['deadline_date']) ?>">
+            <span class="countdown-badge inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                <span class="countdown-dot w-1.5 h-1.5 rounded-full"></span>
+                <span class="countdown-label">Membaca waktu...</span>
             </span>
         </div>
     <?php endif; ?>
 
-    <div class="text-xs text-blue-500 font-mono mb-3"
-         data-countdown="<?= htmlspecialchars($task['deadline_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-        <!-- Countdown muncul di sini via JavaScript -->
+    <!-- Member Assignees -->
+    <div class="flex items-center justify-between border-t border-slate-800/80 pt-2.5">
+        <!-- Avatar List -->
+        <div class="flex -space-x-1.5 overflow-hidden">
+            <?php if (empty($task['assignees'])): ?>
+                <span class="text-[10px] text-slate-500 italic">Belum ditugaskan</span>
+            <?php else: ?>
+                <?php foreach ($task['assignees'] as $idx => $assignee): 
+                    if ($idx >= 3): ?>
+                        <div class="w-5 h-5 rounded-full bg-slate-800 border border-dark-900 flex items-center justify-center text-slate-400 text-[8px] font-bold z-10" title="Dan lainnya">
+                            +<?= count($task['assignees']) - 3 ?>
+                        </div>
+                        <?php break; 
+                    endif; ?>
+                    <div class="w-5 h-5 rounded-full bg-primary-600 border border-dark-900 flex items-center justify-center text-white text-[9px] font-bold" 
+                         style="z-index: <?= 10 - $idx ?>"
+                         title="<?= htmlspecialchars($assignee['username']) ?>">
+                        <?= htmlspecialchars(strtoupper(substr($assignee['username'], 0, 1))) ?>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- Popover Pendelegasian (Assign Member) -->
+        <div class="relative">
+            <button type="button" 
+                    onclick="document.getElementById('assign-popover-<?= $task['id'] ?>').classList.toggle('hidden')" 
+                    class="text-[10px] bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 text-slate-300 hover:text-white px-2 py-1 rounded transition flex items-center gap-1">
+                👤 Delegasi
+            </button>
+            <div id="assign-popover-<?= $task['id'] ?>" 
+                 class="hidden absolute right-0 bottom-full mb-2 z-50 bg-dark-800 border border-slate-700/80 rounded-xl p-3 w-48 shadow-2xl text-left">
+                <h5 class="text-xs font-bold text-white mb-2 pb-1 border-b border-slate-700">Tugaskan Anggota</h5>
+                <form method="POST" action="../src/controllers/TaskController.php">
+                    <input type="hidden" name="action" value="assign_member">
+                    <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
+                    
+                    <div class="max-h-32 overflow-y-auto mb-3.5 space-y-1.5 col-scroll">
+                        <?php 
+                        $assigned_ids = array_column($task['assignees'] ?? [], 'id');
+                        if (empty($all_users)): ?>
+                            <p class="text-[10px] text-slate-500 italic">Tidak ada anggota lain</p>
+                        <?php else: ?>
+                            <?php foreach ($all_users as $user): ?>
+                                <label class="flex items-center gap-2 text-xs text-slate-300 hover:text-white cursor-pointer">
+                                    <input type="checkbox" name="user_ids[]" value="<?= $user['id'] ?>" <?= in_array($user['id'], $assigned_ids) ? 'checked' : '' ?> class="rounded bg-dark-900 border-slate-600 text-primary-600 focus:ring-primary-500 focus:ring-offset-dark-900">
+                                    <?= htmlspecialchars($user['username']) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <button type="submit" class="w-full text-center py-1 bg-primary-600 hover:bg-primary-500 text-white rounded text-xs font-semibold transition shadow-md shadow-primary-600/20">
+                        Simpan
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <div class="flex gap-1 mt-2 pt-2 border-t border-gray-100">
-        <?php if (($task['status'] ?? 'todo') !== 'doing'): ?>
-        <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
-            <input type="hidden" name="action"  value="update_status">
-            <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
-            <input type="hidden" name="status"  value="doing">
-            <button type="submit"
-                    class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded transition-colors">
-                → Doing
-            </button>
-        </form>
-        <?php endif; ?>
-
-        <?php if (($task['status'] ?? 'todo') !== 'done'): ?>
-        <form method="POST" action="<?= htmlspecialchars('../../src/controllers/TaskController.php') ?>">
-            <input type="hidden" name="action"  value="update_status">
-            <input type="hidden" name="task_id" value="<?= (int)($task['id'] ?? 0) ?>">
-            <input type="hidden" name="status"  value="done">
-            <button type="submit"
-                    class="text-xs bg-green-50 hover:bg-green-100 text-green-600 px-2 py-1 rounded transition-colors">
-                ✓ Done
-            </button>
-        </form>
-        <?php endif; ?>
-    </div>
-</div>
-
-
-<button onclick="document.getElementById('modalCreateTask').classList.remove('hidden')"
-        class="fixed bottom-6 right-6 z-40 bg-indigo-600 hover:bg-indigo-700
-               text-white font-semibold px-4 py-3 rounded-full shadow-lg
-               flex items-center gap-2 transition-colors duration-200">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-    </svg>
-    Tugas Baru
-</button>
-
-<div id="modalCreateTask"
-     class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
-
-        <button onclick="document.getElementById('modalCreateTask').classList.add('hidden')"
-                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
+    <!-- Pemicu Komentar (Comment toggle) -->
+    <div class="flex justify-end pt-0.5">
+        <button type="button" 
+                onclick="document.getElementById('comments-section-<?= $task['id'] ?>').classList.toggle('hidden')" 
+                class="text-[11px] text-slate-400 hover:text-white transition flex items-center gap-1.5">
+            💬 Diskusi
         </button>
-
-        <h2 class="text-lg font-bold text-gray-800 mb-5">➕ Buat Tugas Baru</h2>
-
-        <form method="POST" action="../../src/controllers/TaskController.php">
-            <input type="hidden" name="action" value="create_task">
-
-            <div class="mb-4">
-                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-                    Judul Tugas <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="title" name="title" required
-                       placeholder="Contoh: Desain halaman login"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
-            </div>
-
-            <div class="mb-4">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                    Deskripsi
-                </label>
-                <textarea id="description" name="description" rows="3"
-                          placeholder="Jelaskan detail tugas ini..."
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                                 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
-                                 resize-none"></textarea>
-            </div>
-
-            <div class="mb-4">
-                <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">
-                    Prioritas
-                </label>
-                <select id="priority" name="priority"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                               focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
-                               bg-white">
-                    <option value="low">🟢 Low</option>
-                    <option value="medium" selected>🟡 Medium</option>
-                    <option value="high">🔴 High</option>
-                </select>
-            </div>
-
-            <div class="mb-6">
-                <label for="deadline_date" class="block text-sm font-medium text-gray-700 mb-1">
-                    Deadline
-                </label>
-                <input type="date" id="deadline_date" name="deadline_date"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                              focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent">
-            </div>
-
-            <div class="flex gap-3">
-                <button type="submit"
-                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold
-                               py-2 rounded-lg text-sm transition-colors duration-200">
-                    Buat Tugas
-                </button>
-                <button type="button"
-                        onclick="document.getElementById('modalCreateTask').classList.add('hidden')"
-                        class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700
-                               font-semibold py-2 rounded-lg text-sm transition-colors duration-200">
-                    Batal
-                </button>
-            </div>
-        </form>
     </div>
+
+    <!-- Area Komentar (Hidden by default) -->
+    <div id="comments-section-<?= $task['id'] ?>" class="hidden pt-1.5">
+        <?php 
+        $task_id = $task['id']; 
+        include __DIR__ . '/comment_section.php'; 
+        ?>
+    </div>
+
 </div>
