@@ -93,25 +93,3 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP  DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
--- ============================================================
--- (Opsional) Data dummy untuk testing lokal.
--- Hapus atau komentari blok ini sebelum demo ke dosen.
--- Password semua akun dummy: "password123"
--- ============================================================
--- INSERT INTO users (username, password) VALUES
---     ('gandhi',  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
---     ('hafiz',   '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
---     ('bima',    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
---
--- INSERT INTO projects (title, description, owner_id) VALUES
---     ('Ganbat Dev Sprint 1', 'Pengembangan fitur inti platform.', 1);
---
--- INSERT INTO project_members (project_id, user_id, status_invite) VALUES
---     (1, 2, 'accepted'),
---     (1, 3, 'pending');
---
--- INSERT INTO subtasks (project_id, title, assigned_to, status, deadline_date) VALUES
---     (1, 'Setup repo & folder structure', 2, 'done',    '2025-06-01'),
---     (1, 'Buat halaman login & register',  2, 'ongoing', '2025-06-10'),
---     (1, 'Implementasi Kanban Board',       3, 'todo',    '2025-06-15');
