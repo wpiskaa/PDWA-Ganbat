@@ -22,13 +22,12 @@ USE ganbat;
 -- ------------------------------------------------------------
 -- Tabel 1: users
 -- Menyimpan akun pengguna.
--- Kolom profile_picture dipakai oleh modul Hafiz (upload foto).
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id              INT          AUTO_INCREMENT PRIMARY KEY,
     username        VARCHAR(50)  NOT NULL UNIQUE,
     password        VARCHAR(255) NOT NULL,               -- hasil password_hash(), BUKAN teks asli
-    profile_picture VARCHAR(255) DEFAULT NULL            -- nama file foto, diisi oleh ProfileController
+    profile_picture VARCHAR(255) DEFAULT NULL
 );
 
 -- ------------------------------------------------------------
