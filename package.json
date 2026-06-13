@@ -1,0 +1,26 @@
+{
+  "name": "ganbat-project",
+  "version": "1.0.0",
+  "description": "**Ganbat** adalah platform manajemen tugas visual berbasis web yang mengadopsi konsep *Kanban board*. Aplikasi ini dirancang untuk memfasilitasi pelacakan kemajuan tugas secara terpusat, transparan, dan terstruktur guna meningkatkan produktivitas serta efisiensi kolaborasi tim. Melalui Ganbat, pengguna dapat membuat, mendelegasikan, dan memantau pergerakan status pekerjaan dari awal hingga selesai serta menetapkan batas waktu penyelesaian yang jelas.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/css/style.css",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./public/css/style.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spicyshibe/Ganbat-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/spicyshibe/Ganbat-/issues"
+  },
+  "homepage": "https://github.com/spicyshibe/Ganbat-#readme",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
