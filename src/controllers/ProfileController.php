@@ -1,7 +1,4 @@
 <?php
-// src/controllers/ProfileController.php
-// Ditulis oleh: Hafiz Kurniawan
-// Deskripsi: Mengelola upload foto profil pengguna
 
 require_once __DIR__ . '/../config/database.php';
 
@@ -9,7 +6,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Proteksi halaman controller
 if (empty($_SESSION['logged_in']) || empty($_SESSION['user_id'])) {
     header('Location: ../../public/login.php');
     exit;
@@ -39,14 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Batasi ukuran file (maks 2MB)
         if ($fileSize > 2 * 1024 * 1024) {
             $_SESSION['error'] = 'Ukuran file terlalu besar. Maksimal 2 MB.';
             header('Location: ../../public/profile.php');
             exit;
         }
 
-        // Ekstensi file yang diperbolehkan
         $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
 
@@ -56,22 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Tentukan folder penyimpanan lokal
         $uploadDir = __DIR__ . '/../../public/assets/uploads/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
 
-        // Generate nama file unik
         $newFileName = 'avatar_' . $user_id . '_' . time() . '.' . $fileExt;
         $destPath = $uploadDir . $newFileName;
 
         if (move_uploaded_file($fileTmpName, $destPath)) {
-            // Path relatif yang akan disimpan di database
             $dbPath = 'assets/uploads/' . $newFileName;
 
             try {
-                // Ambil info profile picture lama untuk dihapus (jika ada)
                 $selectStmt = $pdo->prepare("SELECT profile_picture FROM users WHERE id = :id");
                 $selectStmt->execute([':id' => $user_id]);
                 $oldPic = $selectStmt->fetchColumn();
@@ -80,14 +70,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unlink(__DIR__ . '/../../public/' . $oldPic);
                 }
 
-                // Update database
                 $updateStmt = $pdo->prepare("UPDATE users SET profile_picture = :profile_picture WHERE id = :id");
                 $updateStmt->execute([
                     ':profile_picture' => $dbPath,
                     ':id' => $user_id
                 ]);
 
-                // Update session
                 $_SESSION['profile_picture'] = $dbPath;
 
                 $_SESSION['success'] = 'Foto profil berhasil diperbarui.';

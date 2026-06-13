@@ -1,14 +1,10 @@
 <?php
-// public/profile.php
-// Ditulis oleh: Hafiz Kurniawan
-// Deskripsi: Halaman antarmuka manajemen profil pengguna untuk unggah foto profil.
 
 require_once __DIR__ . '/../src/config/database.php';
 require_once __DIR__ . '/../src/config/auth_guard.php';
 
 $user_id = (int)$_SESSION['user_id'];
 
-// Ambil data user paling mutakhir dari database
 try {
     $stmt = $pdo->prepare("SELECT username, profile_picture FROM users WHERE id = :id LIMIT 1");
     $stmt->execute([':id' => $user_id]);
@@ -20,7 +16,6 @@ try {
 $username = htmlspecialchars($user['username'] ?? 'User', ENT_QUOTES);
 $profile_picture = htmlspecialchars($user['profile_picture'] ?? '', ENT_QUOTES);
 
-// Ambil pesan flash
 $error = $_SESSION['error'] ?? '';
 $success = $_SESSION['success'] ?? '';
 unset($_SESSION['error'], $_SESSION['success']);
@@ -31,7 +26,6 @@ unset($_SESSION['error'], $_SESSION['success']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profil Saya — Ganbat</title>
-    <!-- Tailwind CSS (via CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -58,24 +52,20 @@ unset($_SESSION['error'], $_SESSION['success']);
             }
         }
     </script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="bg-dark-950 min-h-screen font-sans text-white">
 
-    <!-- Background Glow -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute -top-40 -left-40 w-96 h-96 bg-primary-600 rounded-full opacity-10 blur-3xl"></div>
         <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-500 rounded-full opacity-10 blur-3xl"></div>
     </div>
 
-    <!-- Include Navbar -->
     <?php include __DIR__ . '/../src/views/components/navbar.php'; ?>
 
     <main class="relative px-4 py-12 md:px-8 max-w-lg mx-auto">
 
-        <!-- Back Link -->
         <div class="mb-6">
             <a href="index.php" class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors duration-200">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,11 +75,9 @@ unset($_SESSION['error'], $_SESSION['success']);
             </a>
         </div>
 
-        <!-- Card Container -->
         <div class="bg-dark-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
             <h2 class="text-2xl font-bold text-white mb-6 tracking-tight">Profil Saya</h2>
 
-            <!-- Flash Message: Error -->
             <?php if (!empty($error)): ?>
             <div class="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-3 mb-6 text-sm">
                 <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -99,7 +87,6 @@ unset($_SESSION['error'], $_SESSION['success']);
             </div>
             <?php endif; ?>
 
-            <!-- Flash Message: Success -->
             <?php if (!empty($success)): ?>
             <div class="flex items-center gap-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-xl px-4 py-3 mb-6 text-sm">
                 <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -109,7 +96,6 @@ unset($_SESSION['error'], $_SESSION['success']);
             </div>
             <?php endif; ?>
 
-            <!-- User Information & Avatar -->
             <div class="flex flex-col items-center justify-center text-center pb-8 border-b border-slate-700/50 mb-8">
                 <div class="relative w-28 h-28 mb-4">
                     <?php if ($profile_picture): ?>
@@ -125,7 +111,6 @@ unset($_SESSION['error'], $_SESSION['success']);
                 <p class="text-xs text-slate-400 mt-1">Anggota Tim Ganbat</p>
             </div>
 
-            <!-- Upload Form -->
             <form action="../src/controllers/ProfileController.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="upload_profile_picture">
 
@@ -143,7 +128,6 @@ unset($_SESSION['error'], $_SESSION['success']);
                             <input id="profile_picture" name="profile_picture" type="file" accept="image/*" class="hidden" required onchange="displayFileName(this)">
                         </label>
                     </div>
-                    <!-- Selected File Name Display -->
                     <p id="file-name-display" class="text-xs text-primary-400 mt-2 text-center font-medium"></p>
                 </div>
 
