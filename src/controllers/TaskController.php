@@ -92,6 +92,88 @@ function updateTaskStatus(PDO $pdo): void
     exit;
 }
 
+function createSubtask(PDO $pdo): void
+{
+    $project_id   = isset($_POST['project_id']) ? (int) $_POST['project_id'] : 0;
+    $title        = htmlspecialchars(trim($_POST['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $assigned_to  = isset($_POST['assigned_to']) ? (int) $_POST['assigned_to'] : 0;
+    $status       = htmlspecialchars(trim($_POST['status'] ?? 'todo'), ENT_QUOTES, 'UTF-8');
+    $deadline     = $_POST['deadline_date'] ?? null;
+
+    if ($project_id <= 0 || empty($title) || $assigned_to <= 0) {
+
+        $_SESSION['error'] = "Data subtask tidak valid.";
+
+        header('Location: ../../public/index.php');
+        exit;
+    }
+
+    $allowedStatus = ['todo', 'ongoing', 'done'];
+
+    if (!in_array($status, $allowedStatus, true)) {
+        $status = 'todo';
+    }
+
+    try {
+
+        $memberStmt = $pdo->prepare(
+            "SELECT *
+             FROM project_members
+             WHERE project_id = :project_id
+             AND user_id = :user_id
+             AND status_invite = 'accepted'"
+        );
+
+        $memberStmt->execute([
+            ':project_id' => $project_id,
+            ':user_id'    => $assigned_to
+        ]);
+
+        $member = $memberStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$member) {
+
+            $_SESSION['error'] = "User bukan member project.";
+
+            header('Location: ../../public/index.php');
+            exit;
+        }
+
+        $stmt = $pdo->prepare(
+            "INSERT INTO subtasks (
+                project_id,
+                title,
+                assigned_to,
+                status,
+                deadline_date
+            ) VALUES (
+                :project_id,
+                :title,
+                :assigned_to,
+                :status,
+                :deadline_date
+            )"
+        );
+
+        $stmt->execute([
+            ':project_id'    => $project_id,
+            ':title'         => $title,
+            ':assigned_to'   => $assigned_to,
+            ':status'        => $status,
+            ':deadline_date' => $deadline
+        ]);
+
+        $_SESSION['success'] = "Subtask berhasil dibuat!";
+
+    } catch (PDOException $e) {
+
+        $_SESSION['error'] = "Gagal membuat subtask.";
+    }
+
+    header('Location: ../../public/index.php');
+    exit;
+}
+
 function assignMemberToTask(PDO $pdo): void
 {
     $task_id = isset($_POST['task_id']) ? (int) $_POST['task_id'] : 0;
@@ -155,6 +237,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         case 'update_status':
             updateTaskStatus($pdo);
+            break;
+        
+        case 'create_subtask':
+            createSubtask($pdo);
             break;
 
         case 'assign_member':
