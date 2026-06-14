@@ -1,39 +1,47 @@
+<!-- src/views/components/task_card.php -->
+
 <?php
-// src/views/components/task_card.php
-// Deskripsi: Komponen kartu tugas untuk Kanban Board.
-//             Menerima variabel $task dari board_column.php.
-//             Menerima variabel $all_users dari index.php.
+/**
+ * Required Variables:
+ * $task
+ * $currentUserId
+ */
 
-// Setup prioritas dan gaya
-$priority_map = [
-    'high'   => [
-        'label' => 'Tinggi',
-        'badge' => 'bg-red-500/10 text-red-400 border border-red-500/20',
-        'dot'   => 'bg-red-400',
-    ],
-    'medium' => [
-        'label' => 'Sedang',
-        'badge' => 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-        'dot'   => 'bg-amber-400',
-    ],
-    'low'    => [
-        'label' => 'Rendah',
-        'badge' => 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
-        'dot'   => 'bg-slate-500',
-    ],
-];
+$canUpdate = ((int)$task['assigned_to'] === (int)$currentUserId);
 
-$p = $priority_map[$task['priority'] ?? 'medium'] ?? $priority_map['medium'];
+$nextStatus = null;
+
+if ($task['status'] === 'todo') {
+    $nextStatus = 'ongoing';
+} elseif ($task['status'] === 'ongoing') {
+    $nextStatus = 'done';
+}
 ?>
 
-<div class="card-transition bg-dark-900/60 border border-slate-700/40 hover:border-slate-600/70
-            rounded-xl p-4 cursor-pointer group shadow-sm flex flex-col gap-3">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+    <div class="mb-3">
+        <h4 class="font-semibold text-gray-800 break-words">
+            <?= htmlspecialchars($task['title']) ?>
+        </h4>
+    </div>
 
-    <!-- Header: Prioritas & Tombol Opsi status -->
-    <div class="flex items-center justify-between">
-        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full <?= $p['badge'] ?>">
-            <span class="w-1.5 h-1.5 rounded-full <?= $p['dot'] ?>"></span>
-            <?= $p['label'] ?>
+    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+        <span>
+            Deadline:
+            <?= !empty($task['deadline_date'])
+                ? htmlspecialchars($task['deadline_date'])
+                : '-' ?>
+        </span>
+
+        <span class="px-2 py-1 rounded-full text-xs font-medium
+            <?php if ($task['status'] === 'todo'): ?>
+                bg-gray-200 text-gray-700
+            <?php elseif ($task['status'] === 'ongoing'): ?>
+                bg-yellow-100 text-yellow-700
+            <?php else: ?>
+                bg-green-100 text-green-700
+            <?php endif; ?>">
+            <?= ucfirst(htmlspecialchars($task['status'])) ?>
         </span>
 
         <!-- Tombol Aksi Status -->
@@ -83,6 +91,30 @@ $p = $priority_map[$task['priority'] ?? 'medium'] ?? $priority_map['medium'];
         </div>
     </div>
 
+<<<<<<< HEAD
+    <?php if ($canUpdate && $nextStatus !== null): ?>
+        <form action="/src/controllers/update_subtask_status.php" method="POST">
+            <input
+                type="hidden"
+                name="subtask_id"
+                value="<?= (int)$task['id'] ?>"
+            >
+
+            <input
+                type="hidden"
+                name="status"
+                value="<?= htmlspecialchars($nextStatus) ?>"
+            >
+
+            <button
+                type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition"
+            >
+                Move to <?= ucfirst($nextStatus) ?>
+            </button>
+        </form>
+    <?php endif; ?>
+=======
     <!-- Judul & Deskripsi -->
     <div>
         <h4 class="text-sm font-semibold text-white leading-snug mb-1">
@@ -182,4 +214,5 @@ $p = $priority_map[$task['priority'] ?? 'medium'] ?? $priority_map['medium'];
         ?>
     </div>
 
+>>>>>>> f9866c907aa95f92b84669ac7c9d8bc26de5253f
 </div>
