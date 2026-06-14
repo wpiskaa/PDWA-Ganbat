@@ -95,11 +95,11 @@ Ganbat-project/
 
 ---
 
-## 🚀 Panduan Menjalankan (Untuk Presentasi)
+## 🚀 Panduan Menjalankan 
 
 1. Pastikan **XAMPP / MAMP** Anda berjalan (Apache & MySQL).
 2. Import file `database/schema.sql` ke dalam database `ganbat` via phpMyAdmin.
 3. Buka browser dan arahkan ke `http://localhost/Ganbat-project/public/login.php`.
 4. (Opsional untuk Developer): Jika melakukan perubahan tampilan CSS, jalankan *compiler* Tailwind dengan perintah: `npx tailwindcss -i ./src/input.css -o ./public/css/style.css`.
 
-> *Proyek ini siap untuk didemonstrasikan! Ganbatte!* 🔥
+> *Proyek ini siap untuk dijalankan! Ganbatte!* 🔥
