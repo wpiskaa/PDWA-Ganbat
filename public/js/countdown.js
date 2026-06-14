@@ -1,58 +1,71 @@
 /**
- * Ganbat V2 Task Management System
- * Feature: Realtime Subtask Countdown
- * Author: Rafie Rasydan Wahyudi
+ * ============================================================
+ *  GANBAT - Sistem Manajemen Tugas
+ *  File   : public/js/countdown.js
+ * ============================================================
+ *  Countdown timer real-time untuk deadline subtask.
+ *  Cari elemen dengan atribut data-deadline, lalu update
+ *  child element .countdown-text setiap detik.
+ * ============================================================
  */
 
 document.addEventListener("DOMContentLoaded", function () {
-    function updateCountdowns() {
-        // Ambil semua elemen subtask yang memiliki atribut data-deadline
-        const countdownElements = document.querySelectorAll("[data-deadline]");
 
-        countdownElements.forEach(element => {
-            const deadlineStr = element.getAttribute("data-deadline");
-            if (!deadlineStr || deadlineStr.trim() === "") return;
+    function formatCountdown(ms) {
+        if (ms <= 0) return '⚠️ Overdue';
 
-            // Pastikan format string bisa diparsing oleh Date JS
-            const deadlineTime = new Date(deadlineStr).getTime();
-            const now = new Date().getTime();
-            const difference = deadlineTime - now;
+        var totalSeconds = Math.floor(ms / 1000);
+        var days    = Math.floor(totalSeconds / 86400);
+        var hours   = Math.floor((totalSeconds % 86400) / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
 
-            // Cari elemen tempat teks akan dirender
-            const displayElement = element.querySelector(".countdown-text");
-            if (!displayElement) return;
+        var parts = [];
+        if (days > 0)    parts.push(days + 'h');
+        if (hours > 0)   parts.push(hours + 'j');
+        if (minutes > 0) parts.push(minutes + 'm');
+        parts.push(seconds + 'd');
 
-            // Jika Overdue (Waktu Habis)
-            if (difference <= 0) {
-                displayElement.innerHTML = "⚠️ Overdue";
-                displayElement.className = "countdown-text text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200 inline-block mt-2";
-                return;
+        return '⏳ ' + parts.join(' ');
+    }
+
+    function updateAllCountdowns() {
+        var elements = document.querySelectorAll('[data-deadline]');
+
+        elements.forEach(function (el) {
+            var deadline = el.getAttribute('data-deadline');
+            if (!deadline || deadline.trim() === '') return;
+
+            var displayEl = el.querySelector('.countdown-text');
+            if (!displayEl) return;
+
+            var deadlineStr = deadline.trim();
+            if (deadlineStr.indexOf(' ') !== -1) {
+                deadlineStr = deadlineStr.replace(' ', 'T');
+            } else if (deadlineStr.indexOf('T') === -1 && deadlineStr.length === 10) {
+                deadlineStr += 'T23:59:59';
             }
+            var deadlineDate = new Date(deadlineStr);
+            var now = new Date();
+            var diff = deadlineDate - now;
 
-            // Kalkulasi Waktu
-            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+            displayEl.textContent = formatCountdown(diff);
 
-            // Format Tampilan
-            let countdownString = "";
-            if (days > 0) countdownString += `${days}h `;
-            if (hours > 0 || days > 0) countdownString += `${hours}j `;
-            countdownString += `${minutes}m ${seconds}s`;
+            // Remove old color classes
+            displayEl.classList.remove('text-red-400', 'text-amber-400', 'text-green-400', 'text-slate-400');
 
-            displayElement.innerHTML = `⏳ Sisa: ${countdownString}`;
-
-            // Peringatan jika sisa waktu kurang dari 24 Jam
-            if (days === 0 && hours < 24) {
-                displayElement.className = "countdown-text text-amber-600 font-medium text-xs bg-amber-50 px-2 py-1 rounded border border-amber-200 inline-block mt-2";
-            } else {
-                displayElement.className = "countdown-text text-gray-500 text-xs bg-gray-50 px-2 py-1 rounded border border-gray-200 inline-block mt-2";
+            if (diff <= 0) {
+                displayEl.classList.add('text-red-400');
+            } else if (diff <= (5 * 3600000)) { // <= 5 jam
+                displayEl.classList.add('text-red-400');
+            } else if (diff <= (12 * 3600000)) { // <= 12 jam
+                displayEl.classList.add('text-amber-400');
+            } else { // > 12 jam (hitungan hari)
+                displayEl.classList.add('text-green-400');
             }
         });
     }
 
-    // Jalankan langsung dan atur interval tiap 1 detik
-    updateCountdowns();
-    setInterval(updateCountdowns, 1000);
+    updateAllCountdowns();
+    setInterval(updateAllCountdowns, 1000);
 });

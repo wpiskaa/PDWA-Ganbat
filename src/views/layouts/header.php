@@ -1,22 +1,4 @@
 <?php
-/**
- * ============================================================
- *  GANBAT - Sistem Manajemen Tugas
- *  File   : src/views/layouts/header.php
- *  Tugas  : Gandhi Muhammad Bagas Saputra (Core Configuration)
- * ============================================================
- *
- *  Bagian pembuka HTML yang dipakai SEMUA halaman.
- *  Cukup panggil di awal tiap halaman:
- *
- *      <?php $pageTitle = "Dashboard"; ?>
- *      <?php require_once __DIR__ . '/../src/views/layouts/header.php'; ?>
- *
- *  (Variabel $pageTitle opsional, untuk judul tab browser.)
- * ============================================================
- */
- 
-// Mulai session kalau belum jalan (dibutuhkan modul login - Hafiz)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -26,11 +8,9 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
- 
     <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' — Ganbat' : 'Ganbat' ?></title>
- 
-    <!-- Tailwind CSS (Local via style.css) -->
     <link rel="stylesheet" href="/Ganbat-project/public/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800">
-    <!-- Isi tiap halaman akan ditulis setelah baris ini -->
+<body class="bg-dark-950 min-h-screen font-sans text-white">

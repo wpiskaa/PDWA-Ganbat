@@ -1,133 +1,118 @@
 <?php
-
 require_once __DIR__ . '/../config/database.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-class LeaderController
-{
-    private PDO $pdo;
+if (empty($_SESSION['user_id'])) {
+    header('Location: ../../public/login.php');
+    exit;
+}
 
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
+$user_id = $_SESSION['user_id'];
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-    public function getProjectById(int $projectId): ?array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT *
-            FROM projects
-            WHERE id = :project_id
-        ");
+switch ($action) {
+    case 'reassign_subtask':
+        $subtask_id = (int) ($_POST['subtask_id'] ?? 0);
+        $new_user_id = (int) ($_POST['new_user_id'] ?? 0);
+        $project_id = (int) ($_POST['project_id'] ?? 0);
 
-        $stmt->execute([
-            ':project_id' => $projectId
-        ]);
+        if ($subtask_id <= 0 || $new_user_id <= 0 || $project_id <= 0) {
+            $_SESSION['error'] = 'Data tidak valid.';
+            header('Location: ../../public/index.php');
+            exit;
+        }
 
+        // Check current user is project owner
+        $stmt = $pdo->prepare('SELECT id, title FROM projects WHERE id = ? AND owner_id = ?');
+        $stmt->execute([$project_id, $user_id]);
         $project = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $project ?: null;
-    }
-
-    public function getProjectMembers(int $projectId): array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT
-                u.id,
-                u.username,
-                u.profile_picture
-            FROM project_members pm
-            INNER JOIN users u
-                ON pm.user_id = u.id
-            WHERE pm.project_id = :project_id
-            AND pm.status_invite = 'accepted'
-            ORDER BY u.username ASC
-        ");
-
-        $stmt->execute([
-            ':project_id' => $projectId
-        ]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getProjectSubtasks(int $projectId): array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT
-                s.id,
-                s.title,
-                s.status,
-                s.deadline_date,
-                u.username AS assigned_username,
-                u.id AS assigned_user_id
-            FROM subtasks s
-            LEFT JOIN users u
-                ON s.assigned_to = u.id
-            WHERE s.project_id = :project_id
-            ORDER BY s.id DESC
-        ");
-
-        $stmt->execute([
-            ':project_id' => $projectId
-        ]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function reassignSubtask(int $subtaskId, int $newUserId, int $projectId): bool
-    {
-        $stmt = $this->pdo->prepare("
-            UPDATE subtasks
-            SET assigned_to = :assigned_to
-            WHERE id = :subtask_id
-            AND project_id = :project_id
-        ");
-
-        return $stmt->execute([
-            ':assigned_to' => $newUserId,
-            ':subtask_id' => $subtaskId,
-            ':project_id' => $projectId
-        ]);
-    }
-
-    public function kickMember(int $projectId, int $userId): bool
-    {
-        try {
-
-            $this->pdo->beginTransaction();
-
-            $removeMember = $this->pdo->prepare("
-                DELETE FROM project_members
-                WHERE project_id = :project_id
-                AND user_id = :user_id
-            ");
-
-            $removeMember->execute([
-                ':project_id' => $projectId,
-                ':user_id' => $userId
-            ]);
-
-            $clearSubtasks = $this->pdo->prepare("
-                UPDATE subtasks
-                SET assigned_to = NULL
-                WHERE project_id = :project_id
-                AND assigned_to = :user_id
-            ");
-
-            $clearSubtasks->execute([
-                ':project_id' => $projectId,
-                ':user_id' => $userId
-            ]);
-
-            $this->pdo->commit();
-
-            return true;
-
-        } catch (PDOException $e) {
-
-            $this->pdo->rollBack();
-
-            return false;
+        if (!$project) {
+            $_SESSION['error'] = 'Anda tidak memiliki izin untuk mengubah penugasan.';
+            header('Location: ../../public/index.php');
+            exit;
         }
-    }
+
+        // Check new_user_id is accepted member
+        $stmt = $pdo->prepare('SELECT user_id FROM project_members WHERE project_id = ? AND user_id = ? AND status_invite = ?');
+        $stmt->execute([$project_id, $new_user_id, 'accepted']);
+        if (!$stmt->fetch()) {
+            $_SESSION['error'] = 'User tujuan bukan anggota aktif proyek ini.';
+            header('Location: ../../public/project_detail.php?id=' . $project_id);
+            exit;
+        }
+
+        // Update subtask assignment
+        $stmt = $pdo->prepare('UPDATE subtasks SET assigned_to = ? WHERE id = ? AND project_id = ?');
+        $stmt->execute([$new_user_id, $subtask_id, $project_id]);
+
+        // Get subtask title for notification
+        $stmt = $pdo->prepare('SELECT title FROM subtasks WHERE id = ?');
+        $stmt->execute([$subtask_id]);
+        $subtask = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Create notification for new assignee
+        if ($new_user_id != $user_id) {
+            $message = $_SESSION['username'] . ' menugaskan ulang Anda pada tugas "' . $subtask['title'] . '" di proyek "' . $project['title'] . '".';
+            $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, reference_id, is_read, created_at) VALUES (?, ?, ?, ?, 0, NOW())');
+            $stmt->execute([$new_user_id, 'task_reassigned', $message, $project_id]);
+        }
+
+        $_SESSION['success'] = 'Tugas berhasil ditugaskan ulang.';
+        header('Location: ../../public/project_detail.php?id=' . $project_id);
+        exit;
+
+    case 'kick_member':
+        $project_id = (int) ($_POST['project_id'] ?? 0);
+        $kick_user_id = (int) ($_POST['user_id'] ?? 0);
+
+        if ($project_id <= 0 || $kick_user_id <= 0) {
+            $_SESSION['error'] = 'Data tidak valid.';
+            header('Location: ../../public/index.php');
+            exit;
+        }
+
+        // Check current user is project owner
+        $stmt = $pdo->prepare('SELECT id, title FROM projects WHERE id = ? AND owner_id = ?');
+        $stmt->execute([$project_id, $user_id]);
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$project) {
+            $_SESSION['error'] = 'Anda tidak memiliki izin untuk mengeluarkan anggota.';
+            header('Location: ../../public/index.php');
+            exit;
+        }
+
+        // Can't kick self (owner)
+        if ($kick_user_id == $user_id) {
+            $_SESSION['error'] = 'Anda tidak bisa mengeluarkan diri sendiri dari proyek.';
+            header('Location: ../../public/project_detail.php?id=' . $project_id);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            // Delete from project_members
+            $stmt = $pdo->prepare('DELETE FROM project_members WHERE project_id = ? AND user_id = ?');
+            $stmt->execute([$project_id, $kick_user_id]);
+
+            // Unassign subtasks belonging to kicked member
+            $stmt = $pdo->prepare('UPDATE subtasks SET assigned_to = NULL WHERE project_id = ? AND assigned_to = ?');
+            $stmt->execute([$project_id, $kick_user_id]);
+
+            $pdo->commit();
+
+            $_SESSION['success'] = 'Anggota berhasil dikeluarkan dari proyek.';
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $_SESSION['error'] = 'Gagal mengeluarkan anggota. Silakan coba lagi.';
+        }
+
+        header('Location: ../../public/project_detail.php?id=' . $project_id);
+        exit;
+
+    default:
+        header('Location: ../../public/index.php');
+        exit;
 }

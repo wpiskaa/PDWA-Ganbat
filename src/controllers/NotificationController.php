@@ -1,202 +1,152 @@
 <?php
+/**
+ * ============================================================
+ *  GANBAT - Sistem Manajemen Tugas
+ *  File   : src/controllers/NotificationController.php
+ * ============================================================
+ */
+
 require_once __DIR__ . '/../config/database.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-class NotificationController
-{
-    private PDO $pdo;
-
-    public function __construct()
-    {
-        $this->pdo = getDBConnection();
-    }
-
-    /**
-     * Ambil semua notifikasi milik user yang sedang login.
-     */
-    public function getNotifications(int $userId): array
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT id, message, is_read, created_at
-             FROM notifications
-             WHERE user_id = :user_id
-             ORDER BY created_at DESC
-             LIMIT 20"
-        );
-        $stmt->execute([':user_id' => $userId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Hitung notifikasi yang belum dibaca.
-     */
-    public function countUnread(int $userId): int
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM notifications
-             WHERE user_id = :user_id AND is_read = 0"
-        );
-        $stmt->execute([':user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
-    }
-
-    /**
-     * Tandai semua notifikasi user sebagai sudah dibaca.
-     */
-    public function markAllRead(int $userId): void
-    {
-        $stmt = $this->pdo->prepare(
-            "UPDATE notifications SET is_read = 1
-             WHERE user_id = :user_id AND is_read = 0"
-        );
-        $stmt->execute([':user_id' => $userId]);
-    }
-
-    /**
-     * Terima undangan proyek:
-     *  – ubah status_invite menjadi 'accepted'
-     *  – tandai notifikasi terkait sebagai sudah dibaca
-     */
-    public function acceptInvite(int $projectId, int $userId): bool
-    {
-        try {
-            $this->pdo->beginTransaction();
-
-            $stmt = $this->pdo->prepare(
-                "UPDATE project_members
-                 SET status_invite = 'accepted'
-                 WHERE project_id = :project_id
-                   AND user_id    = :user_id
-                   AND status_invite = 'pending'"
-            );
-            $stmt->execute([
-                ':project_id' => $projectId,
-                ':user_id'    => $userId,
-            ]);
-
-            // Tandai notifikasi undangan ini sebagai sudah dibaca
-            $this->markInviteNotificationRead($projectId, $userId);
-
-            $this->pdo->commit();
-            return true;
-        } catch (PDOException $e) {
-            $this->pdo->rollBack();
-            return false;
-        }
-    }
-
-    /**
-     * Tolak undangan proyek:
-     *  – hapus baris dari project_members
-     *  – tandai notifikasi terkait sebagai sudah dibaca
-     */
-    public function rejectInvite(int $projectId, int $userId): bool
-    {
-        try {
-            $this->pdo->beginTransaction();
-
-            $stmt = $this->pdo->prepare(
-                "DELETE FROM project_members
-                 WHERE project_id = :project_id
-                   AND user_id    = :user_id
-                   AND status_invite = 'pending'"
-            );
-            $stmt->execute([
-                ':project_id' => $projectId,
-                ':user_id'    => $userId,
-            ]);
-
-            $this->markInviteNotificationRead($projectId, $userId);
-
-            $this->pdo->commit();
-            return true;
-        } catch (PDOException $e) {
-            $this->pdo->rollBack();
-            return false;
-        }
-    }
-
-    /**
-     * Tandai notifikasi undangan proyek sebagai sudah dibaca
-     * berdasarkan project_id yang disematkan di pesan notifikasi.
-     * Konvensi pesan: mengandung substring "project_id:{$projectId}"
-     */
-    private function markInviteNotificationRead(int $projectId, int $userId): void
-    {
-        $stmt = $this->pdo->prepare(
-            "UPDATE notifications
-             SET is_read = 1
-             WHERE user_id = :user_id
-               AND message LIKE :pattern
-               AND is_read = 0"
-        );
-        $stmt->execute([
-            ':user_id' => $userId,
-            ':pattern' => "%project_id:{$projectId}%",
-        ]);
-    }
-}
-
-// ─── Entry point: hanya dieksekusi jika dipanggil via POST ───────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    session_start();
-
-    if (empty($_SESSION['user_id'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+if (empty($_SESSION['user_id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         exit;
     }
+    header('Location: ../../public/login.php');
+    exit;
+}
 
-    $userId = (int) $_SESSION['user_id'];
-    $action = $_POST['action'] ?? '';
+$user_id = (int) $_SESSION['user_id'];
+$action  = $_POST['action'] ?? $_GET['action'] ?? '';
 
-    $controller = new NotificationController();
-    $response   = ['success' => false, 'message' => 'Aksi tidak dikenali.'];
+switch ($action) {
 
-    switch ($action) {
+    // ──── GET: Ambil notifikasi (JSON untuk AJAX) ────
+    case 'get_notifications':
+        header('Content-Type: application/json');
+        try {
+            $stmt = $pdo->prepare("
+                SELECT id, type, message, reference_id, is_read, created_at
+                FROM notifications
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 20
+            ");
+            $stmt->execute([$user_id]);
+            $notifications = $stmt->fetchAll();
 
-        case 'get_notifications':
-            $notifications = $controller->getNotifications($userId);
-            $unread        = $controller->countUnread($userId);
-            $response      = [
+            $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+            $stmtCount->execute([$user_id]);
+            $unreadCount = (int) $stmtCount->fetchColumn();
+
+            echo json_encode([
                 'success'       => true,
                 'notifications' => $notifications,
-                'unread_count'  => $unread,
-            ];
-            break;
+                'unread_count'  => $unreadCount,
+            ]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
 
-        case 'mark_all_read':
-            $controller->markAllRead($userId);
-            $response = ['success' => true];
-            break;
+    // ──── GET: Tandai semua sudah dibaca ────
+    case 'mark_all_read':
+        header('Content-Type: application/json');
+        try {
+            $stmt = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0");
+            $stmt->execute([$user_id]);
+            echo json_encode(['success' => true]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
 
-        case 'accept_invite':
-            $projectId = (int) ($_POST['project_id'] ?? 0);
-            if ($projectId > 0) {
-                $ok       = $controller->acceptInvite($projectId, $userId);
-                $response = [
-                    'success' => $ok,
-                    'message' => $ok ? 'Undangan diterima.' : 'Gagal menerima undangan.',
-                ];
-            } else {
-                $response = ['success' => false, 'message' => 'project_id tidak valid.'];
+    // ──── POST: Terima undangan proyek ────
+    case 'accept_invite':
+        $notifId = (int) ($_POST['notification_id'] ?? 0);
+
+        try {
+            // Ambil notifikasi
+            $stmtNotif = $pdo->prepare("SELECT * FROM notifications WHERE id = ? AND user_id = ? AND type = 'invite' AND is_read = 0");
+            $stmtNotif->execute([$notifId, $user_id]);
+            $notif = $stmtNotif->fetch();
+
+            if (!$notif) {
+                $_SESSION['error'] = 'Undangan tidak ditemukan.';
+                header('Location: ../../public/index.php');
+                exit;
             }
-            break;
 
-        case 'reject_invite':
-            $projectId = (int) ($_POST['project_id'] ?? 0);
-            if ($projectId > 0) {
-                $ok       = $controller->rejectInvite($projectId, $userId);
-                $response = [
-                    'success' => $ok,
-                    'message' => $ok ? 'Undangan ditolak.' : 'Gagal menolak undangan.',
-                ];
-            } else {
-                $response = ['success' => false, 'message' => 'project_id tidak valid.'];
+            $project_id = (int) $notif['reference_id'];
+
+            $pdo->beginTransaction();
+
+            // Update status member menjadi accepted
+            $stmtAccept = $pdo->prepare("
+                UPDATE project_members SET status_invite = 'accepted'
+                WHERE project_id = ? AND user_id = ? AND status_invite = 'pending'
+            ");
+            $stmtAccept->execute([$project_id, $user_id]);
+
+            // Tandai notifikasi sebagai dibaca
+            $stmtRead = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ?");
+            $stmtRead->execute([$notifId]);
+
+            $pdo->commit();
+
+            $_SESSION['success'] = 'Anda berhasil bergabung ke proyek.';
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            error_log("Accept invite error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal menerima undangan.';
+        }
+
+        header('Location: ../../public/index.php');
+        exit;
+
+    // ──── POST: Tolak undangan proyek ────
+    case 'decline_invite':
+        $notifId = (int) ($_POST['notification_id'] ?? 0);
+
+        try {
+            $stmtNotif = $pdo->prepare("SELECT * FROM notifications WHERE id = ? AND user_id = ? AND type = 'invite' AND is_read = 0");
+            $stmtNotif->execute([$notifId, $user_id]);
+            $notif = $stmtNotif->fetch();
+
+            if (!$notif) {
+                $_SESSION['error'] = 'Undangan tidak ditemukan.';
+                header('Location: ../../public/index.php');
+                exit;
             }
-            break;
-    }
 
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
+            $project_id = (int) $notif['reference_id'];
+
+            $pdo->beginTransaction();
+
+            // Hapus dari project_members
+            $stmtDel = $pdo->prepare("DELETE FROM project_members WHERE project_id = ? AND user_id = ? AND status_invite = 'pending'");
+            $stmtDel->execute([$project_id, $user_id]);
+
+            // Tandai notifikasi sebagai dibaca
+            $stmtRead = $pdo->prepare("UPDATE notifications SET is_read = 1 WHERE id = ?");
+            $stmtRead->execute([$notifId]);
+
+            $pdo->commit();
+
+            $_SESSION['success'] = 'Undangan ditolak.';
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            error_log("Decline invite error: " . $e->getMessage());
+            $_SESSION['error'] = 'Gagal menolak undangan.';
+        }
+
+        header('Location: ../../public/index.php');
+        exit;
+
+    default:
+        header('Location: ../../public/index.php');
+        exit;
 }

@@ -1,163 +1,111 @@
 <?php
+/**
+ * ============================================================
+ *  GANBAT - Sistem Manajemen Tugas
+ *  File   : src/utils/helpers.php
+ * ============================================================
+ *  Fungsi-fungsi pembantu (helper) untuk tampilan UI.
+ * ============================================================
+ */
 
 /**
- * Menghitung status tenggat waktu sebuah tugas.
- * Mengembalikan array berisi status string dan data pendukung lainnya.
- *
- * @param string|null $deadline_date Format 'YYYY-MM-DD'
- * @return array ['status' => string, 'diff_days' => int, 'label' => string]
+ * Format tanggal ke locale Indonesia singkat.
+ */
+function formatDeadlineDate(?string $date): string
+{
+    if (empty($date)) return '-';
+
+    $bulan = [
+        1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+        5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
+        9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des',
+    ];
+
+    $ts = strtotime($date);
+    return date('j', $ts) . ' ' . $bulan[(int)date('n', $ts)] . ' ' . date('Y', $ts);
+}
+
+/**
+ * Menghitung status tenggat waktu.
  */
 function getDeadlineStatus(?string $deadline_date): array
 {
-    // Jika tidak ada tenggat waktu, kembalikan status netral
     if (empty($deadline_date)) {
-        return [
-            'status'    => 'no-deadline',
-            'diff_days' => null,
-            'label'     => 'Tidak ada tenggat',
-        ];
+        return ['status' => 'no-deadline', 'diff_days' => null, 'label' => 'Tanpa deadline'];
     }
 
-    // Gunakan tengah malam hari ini agar perbandingan berdasarkan hari, bukan jam
     $today    = new DateTime('today');
     $deadline = new DateTime($deadline_date);
-    $diff     = $today->diff($deadline); // DateInterval
-
-    // diff->days = selisih absolut (hari), diff->invert: 0 = masa depan, 1 = masa lalu
-    $days   = (int) $diff->days;
-    $invert = (bool) $diff->invert; // true = deadline sudah lewat
+    $diff     = $today->diff($deadline);
+    $days     = (int)$diff->days;
+    $invert   = (bool)$diff->invert;
 
     if ($invert) {
-        // Tenggat waktu sudah terlewat
-        return [
-            'status'    => 'overdue',
-            'diff_days' => -$days,
-            'label'     => $days === 0 ? 'Jatuh tempo hari ini' : "Terlambat {$days} hari",
-        ];
+        return ['status' => 'overdue', 'diff_days' => -$days, 'label' => $days === 0 ? 'Jatuh tempo hari ini' : "Terlambat {$days} hari"];
     } elseif ($days === 0) {
-        // Tenggat waktu tepat hari ini
-        return [
-            'status'    => 'due-today',
-            'diff_days' => 0,
-            'label'     => 'Jatuh tempo hari ini',
-        ];
+        return ['status' => 'due-today', 'diff_days' => 0, 'label' => 'Jatuh tempo hari ini'];
     } elseif ($days <= 3) {
-        // Tenggat waktu dalam 1–3 hari ke depan (warning)
-        return [
-            'status'    => 'due-soon',
-            'diff_days' => $days,
-            'label'     => "Sisa {$days} hari",
-        ];
+        return ['status' => 'due-soon', 'diff_days' => $days, 'label' => "Sisa {$days} hari"];
     } else {
-        // Tenggat waktu masih jauh
-        return [
-            'status'    => 'on-track',
-            'diff_days' => $days,
-            'label'     => "Sisa {$days} hari",
-        ];
+        return ['status' => 'on-track', 'diff_days' => $days, 'label' => "Sisa {$days} hari"];
     }
 }
 
 /**
- * Memetakan status tenggat waktu ke Tailwind CSS utility classes.
- * Mengembalikan classes untuk: teks label, badge background, dan ikon.
- *
- * @param string $status Nilai dari getDeadlineStatus()['status']
- * @return array ['text' => string, 'badge' => string, 'border' => string, 'icon' => string]
+ * CSS classes untuk status deadline (dark theme).
  */
 function getDeadlineClasses(string $status): array
 {
     $map = [
-        'overdue'     => [
-            'text'   => 'text-red-600 font-semibold',
-            'badge'  => 'bg-red-100 text-red-700 border border-red-300',
-            'border' => 'border-l-4 border-red-500',
-            'icon'   => '🚨',
-        ],
-        'due-today'   => [
-            'text'   => 'text-orange-600 font-semibold',
-            'badge'  => 'bg-orange-100 text-orange-700 border border-orange-300',
-            'border' => 'border-l-4 border-orange-500',
-            'icon'   => '⏰',
-        ],
-        'due-soon'    => [
-            'text'   => 'text-yellow-600 font-medium',
-            'badge'  => 'bg-yellow-100 text-yellow-700 border border-yellow-300',
-            'border' => 'border-l-4 border-yellow-400',
-            'icon'   => '⚠️',
-        ],
-        'on-track'    => [
-            'text'   => 'text-green-600',
-            'badge'  => 'bg-green-100 text-green-700 border border-green-200',
-            'border' => 'border-l-4 border-green-400',
-            'icon'   => '✅',
-        ],
-        'no-deadline' => [
-            'text'   => 'text-gray-400',
-            'badge'  => 'bg-gray-100 text-gray-500 border border-gray-200',
-            'border' => 'border-l-4 border-gray-300',
-            'icon'   => '📋',
-        ],
+        'overdue'     => ['text' => 'text-red-400 font-semibold', 'badge' => 'bg-red-500/10 text-red-400 border border-red-500/20', 'icon' => '🚨'],
+        'due-today'   => ['text' => 'text-orange-400 font-semibold', 'badge' => 'bg-orange-500/10 text-orange-400 border border-orange-500/20', 'icon' => '⏰'],
+        'due-soon'    => ['text' => 'text-yellow-400 font-medium', 'badge' => 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20', 'icon' => '⚠️'],
+        'on-track'    => ['text' => 'text-green-400', 'badge' => 'bg-green-500/10 text-green-400 border border-green-500/20', 'icon' => '✅'],
+        'no-deadline' => ['text' => 'text-slate-500', 'badge' => 'bg-slate-500/10 text-slate-400 border border-slate-500/20', 'icon' => '📋'],
     ];
-
-    // Fallback ke 'no-deadline' jika status tidak dikenal
     return $map[$status] ?? $map['no-deadline'];
 }
 
 /**
- * Memformat tanggal dari format 'YYYY-MM-DD' ke format lokal Indonesia.
- * Contoh: '2025-07-04' → '4 Juli 2025'
- *
- * @param string|null $date
- * @return string
+ * CSS classes untuk prioritas (dark theme).
  */
-function formatDeadlineDate(?string $date): string
+function getPriorityBadge(string $priority): string
 {
-    if (empty($date)) {
-        return '-';
-    }
-
-    $bulan = [
-        1  => 'Januari', 2  => 'Februari', 3  => 'Maret',
-        4  => 'April',   5  => 'Mei',       6  => 'Juni',
-        7  => 'Juli',    8  => 'Agustus',   9  => 'September',
-        10 => 'Oktober', 11 => 'November',  12 => 'Desember',
+    $map = [
+        'low'    => 'bg-primary-500/10 text-primary-400 border border-primary-500/20',
+        'medium' => 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+        'high'   => 'bg-red-500/10 text-red-400 border border-red-500/20',
     ];
-
-    $dt = new DateTime($date);
-    return $dt->format('j') . ' ' . $bulan[(int)$dt->format('n')] . ' ' . $dt->format('Y');
+    return $map[strtolower($priority)] ?? $map['medium'];
 }
 
 /**
- * Memetakan nilai prioritas task ke Tailwind classes dan label teks.
- *
- * @param string $priority 'low' | 'medium' | 'high'
- * @return array ['badge' => string, 'label' => string]
+ * CSS classes untuk status subtask (dark theme).
  */
-function getPriorityClasses(string $priority): array
+function getStatusBadge(string $status): string
 {
     $map = [
-        'high'   => ['badge' => 'bg-red-100 text-red-700 border border-red-200',    'label' => 'Tinggi'],
-        'medium' => ['badge' => 'bg-yellow-100 text-yellow-700 border border-yellow-200', 'label' => 'Sedang'],
-        'low'    => ['badge' => 'bg-blue-100 text-blue-700 border border-blue-200',  'label' => 'Rendah'],
+        'todo'    => 'bg-slate-500/10 text-slate-300 border border-slate-500/20',
+        'ongoing' => 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+        'done'    => 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20',
     ];
-
-    return $map[$priority] ?? ['badge' => 'bg-gray-100 text-gray-600', 'label' => ucfirst($priority)];
+    return $map[strtolower($status)] ?? $map['todo'];
 }
 
 /**
- * Memetakan nilai status task ke Tailwind classes dan label teks.
- *
- * @param string $status 'todo' | 'doing' | 'done'
- * @return array ['badge' => string, 'label' => string]
+ * Label untuk prioritas.
  */
-function getStatusClasses(string $status): array
+function getPriorityLabel(string $priority): string
 {
-    $map = [
-        'todo'  => ['badge' => 'bg-gray-100 text-gray-600 border border-gray-200',    'label' => 'Belum Dimulai'],
-        'doing' => ['badge' => 'bg-blue-100 text-blue-700 border border-blue-200',    'label' => 'Sedang Dikerjakan'],
-        'done'  => ['badge' => 'bg-green-100 text-green-700 border border-green-200', 'label' => 'Selesai'],
-    ];
+    $map = ['low' => 'Rendah', 'medium' => 'Sedang', 'high' => 'Tinggi'];
+    return $map[$priority] ?? ucfirst($priority);
+}
 
-    return $map[$status] ?? ['badge' => 'bg-gray-100 text-gray-600', 'label' => ucfirst($status)];
+/**
+ * Label untuk status.
+ */
+function getStatusLabel(string $status): string
+{
+    $map = ['todo' => 'Todo', 'ongoing' => 'Ongoing', 'done' => 'Done'];
+    return $map[$status] ?? ucfirst($status);
 }
