@@ -46,6 +46,7 @@ Proyek ini dibangun menggunakan pendekatan *Separation of Concerns* (SoC) berbas
 
 ganbat/
 ├── database/                   # Skrip basis data
+│   ├── 05_ERD.puml             # File source PlantUML untuk Entity Relationship Diagram (ERD)
 │   └── schema.sql              # Struktur tabel ekspor MySQL (users, tasks, dll.)
 ├── public/                     # Web-accessible root (Diakses langsung oleh browser)
 │   ├── css/                    # Custom stylesheets tambahan
@@ -76,6 +77,119 @@ ganbat/
 │       └── helpers.php         # Fungsi format tanggal, validasi waktu, sanitasi input
 ├── .gitignore                  # Daftar file penyaring tracking Git
 └── README.md                   # Dokumentasi utama proyek
+
+---
+
+## 📊 Entity Relationship Diagram (ERD)
+
+Aplikasi **Ganbat** menggunakan skema basis data relasional berikut untuk mengelola data pengguna, tugas, pendelegasian, dan komentar. 
+
+Berikut adalah visualisasi diagram hubungan entitas (ERD) dalam format PlantUML:
+
+- **File Source PlantUML:** [database/05_ERD.puml](file:///d:/KULIAH/Semester4/PDW/PDWA-Ganbat-main/database/05_ERD.puml)
+
+```plantuml
+@startuml 05_ERD
+title Ganbat — Entity Relationship Diagram (ERD)
+
+skinparam backgroundColor #1E1E2E
+skinparam entityBorderColor #7C6AF5
+skinparam entityBackgroundColor #2A2A3E
+skinparam entityFontColor #CCCCFF
+skinparam entityHeaderBackgroundColor #3A2A5E
+skinparam arrowColor #7C6AF5
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam noteBorderColor #7C6AF5
+skinparam noteBackgroundColor #2E2E45
+skinparam noteFontColor #CCCCFF
+
+' ============================================================
+' ENTITAS
+' ============================================================
+
+entity "users" as Users {
+  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
+  --
+  * username : VARCHAR(255) <<UNIQUE>>
+  * password : VARCHAR(255)
+}
+
+entity "tasks" as Tasks {
+  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
+  --
+  * title         : VARCHAR(255)
+  ~ description   : TEXT
+  ~ priority      : VARCHAR(20)  [low|medium|high]\n                    DEFAULT 'medium'
+  ~ status        : VARCHAR(20)  [todo|doing|done]\n                    DEFAULT 'todo'
+  ~ deadline_date : DATE
+  * created_at    : TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+  * updated_at    : TIMESTAMP    ON UPDATE CURRENT_TIMESTAMP
+}
+
+entity "task_assignees" as TaskAssignees {
+  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
+  --
+  * user_id    : INT(11) <<FK → users.id>>
+  * task_id    : INT(11) <<FK → tasks.id>>
+  * created_at : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+}
+
+entity "comments" as Comments {
+  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
+  --
+  * user_id      : INT(11) <<FK → users.id>>
+  * task_id      : INT(11) <<FK → tasks.id>>
+  ~ comment_text : TEXT
+  * created_at   : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+}
+
+' ============================================================
+' RELASI
+' ============================================================
+
+' users — task_assignees (1..N)
+Users ||--o{ TaskAssignees : "1 user dapat\ndi-assign ke\nbanyak tugas"
+
+' tasks — task_assignees (1..N)
+Tasks ||--o{ TaskAssignees : "1 task dapat\ndimiliki banyak\nassignee"
+
+' users — comments (1..N)
+Users ||--o{ Comments : "1 user dapat\nmenulis banyak\nkomentar"
+
+' tasks — comments (1..N)
+Tasks ||--o{ Comments : "1 task dapat\nmemiliki banyak\nkomentar"
+
+' ============================================================
+' NOTES
+' ============================================================
+note bottom of Tasks
+  Kolom **priority** menerima nilai:
+  'low', 'medium', 'high'
+  Kolom **status** menerima nilai:
+  'todo', 'doing', 'done'
+end note
+
+note bottom of TaskAssignees
+  Tabel pivot (Many-to-Many)
+  antara users ↔ tasks.
+  ON DELETE CASCADE di kedua FK.
+end note
+
+note bottom of Comments
+  ON DELETE CASCADE di user_id
+  dan task_id.
+  Komentar terurut ASC by created_at.
+end note
+
+@enduml
+```
+
+### Penjelasan Hubungan & Desain Database:
+- **Tabel `users`**: Berisi kredensial pengguna terdaftar (`username` bersifat unik).
+- **Tabel `tasks`**: Berisi detail setiap tugas termasuk tenggat waktu (`deadline_date`), prioritas (`low`, `medium`, `high`), dan status (`todo`, `doing`, `done`).
+- **Tabel `task_assignees`**: Pivot table yang memfasilitasi hubungan *Many-to-Many* antara `users` dan `tasks`, dengan relasi foreign key `ON DELETE CASCADE` untuk menjaga integritas data jika tugas atau pengguna dihapus.
+- **Tabel `comments`**: Menyimpan pesan diskusi untuk setiap tugas, terkait langsung dengan pengguna yang menulisnya.
 
 ---
 
