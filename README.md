@@ -1,245 +1,105 @@
-# 📋 Ganbat — Task Management System (Sistem Manajemen Tugas)
+# Ganbat! - Sistem Manajemen Tugas & Proyek Tim
 
-**Ganbat** adalah platform manajemen tugas visual berbasis web yang mengadopsi konsep *Kanban board*. Aplikasi ini dirancang untuk memfasilitasi pelacakan kemajuan tugas secara terpusat, transparan, dan terstruktur guna meningkatkan produktivitas serta efisiensi kolaborasi tim. Melalui Ganbat, pengguna dapat membuat, mendelegasikan, dan memantau pergerakan status pekerjaan dari awal hingga selesai serta menetapkan batas waktu penyelesaian yang jelas.
+Ganbat! (diambil dari kata *Ganbatte* yang berarti semangat) adalah sebuah aplikasi manajemen tugas dan proyek berbasis web yang dirancang khusus untuk mempermudah kolaborasi tim, pembagian tugas, dan pelacakan tenggat waktu (deadline).
 
-Proyek ini dibangun menggunakan pendekatan *Separation of Concerns* (SoC) berbasis PHP murni (*native*) tanpa *framework* untuk menjamin keterbacaan kode, kemudahan kolaborasi multi-anggota tanpa *conflict*, serta keamanan aplikasi yang optimal.
-
----
-
-## ⚙️ Tech Stack
-
-| Layer        | Technology                          |
-|--------------|-------------------------------------|
-| **Back-end** | Native PHP (Tanpa Framework), PDO  |
-| **Front-end**| Tailwind CSS (via CDN)             |
-| **Database** | MySQL                               |
-| **Scripting**| Vanilla JS (JavaScript Murni)      |
-| **Server** | Apache (Laragon / XAMPP)            |
+Aplikasi ini sangat cocok digunakan untuk kerja kelompok, manajemen proyek berskala kecil hingga menengah, dan pelacakan produktivitas pribadi.
 
 ---
 
-## ✨ Fitur Utama & Kriteria Sistem
+## 🎯 Fitur Utama (Sudah Diimplementasikan)
 
-### 1. Fitur Fungsional Inti (Core Features)
-* **Sistem Autentikasi (Login / Register)**: Modul autentikasi bagi anggota tim untuk membuat akun baru dan mengakses ruang kerja (*workspace*). Dilengkapi pengamanan halaman utama menggunakan manajemen *session* PHP murni untuk memproteksi *dashboard* dari akses tanpa izin.
-* **Pembuatan Tugas (Create Task)**: Antarmuka berupa formulir interaktif untuk menambahkan kartu tugas baru yang menampung komponen judul, deskripsi, dan tingkat prioritas.
-* **Papan Kanban (Task Status Mapping)**: Fungsionalitas untuk mengubah dan melacak pergerakan status tugas melalui tiga tahap utama: *Todo* (Akan dikerjakan), *Doing* (Sedang dikerjakan), dan *Done* (Selesai).
-* **Pendelegasian Tugas (Assign Member)**: Fitur pendelegasian tugas yang menautkan satu atau lebih akun pengguna teregistrasi ke dalam kartu tugas tertentu (*assignee*).
-* **Manajemen Tenggat Waktu (Deadline)**: Modul penetapan tanggal batas waktu penyelesaian untuk setiap kartu tugas yang dibuat.
+### 1. Manajemen Akun & Profil
+- **Autentikasi Aman:** Sistem Login dan Registrasi menggunakan *password hashing*.
+- **Kustomisasi Profil:** Pengguna dapat mengganti foto profil (*avatar*) mereka sendiri.
 
-### 2. Fitur Tambahan (Optional Value-Added Features)
-* **Hitung Mundur Real-time (Realtime Countdown)**: Indikator visual berupa hitung mundur presisi (hari, jam, menit) menuju batas waktu *deadline* pada setiap kartu tugas menggunakan JavaScript murni.
-* **Komentar Tugas (Task Comments)**: Fungsionalitas diskusi atau log aktivitas di dalam detail kartu tugas untuk memfasilitasi komunikasi antar-anggota tim.
+### 2. Manajemen Proyek (Project)
+- **Buat Proyek:** Pengguna dapat membuat proyek baru yang dilengkapi dengan deskripsi dan **Deadline Global** (hingga penentuan jam).
+- **Sistem *Invite* Anggota:** Ketua proyek dapat mengundang pengguna lain ke dalam proyek menggunakan *username*.
+- **Manajemen Tim:** Ketua proyek memiliki hak (privilege) untuk mengeluarkan (kick) anggota dari proyek.
+- **Arsip Pribadi (Private Archive):** Setiap pengguna (baik ketua maupun anggota) dapat mengarsipkan proyek ke halaman terpisah tanpa memengaruhi tampilan pengguna lainnya.
 
-### 3. Antarmuka & Pengalaman Pengguna (UI/UX)
-* **Board Layout**: Antarmuka utama mengimplementasikan tata letak berbasis kolom yang merepresentasikan status *Todo*, *Doing*, dan *Done*, di mana kartu tugas (*task cards*) dirender secara dinamis di dalam kolom yang sesuai.
-* **Visual Hierarchy**: Elemen tenggat waktu dibuat menonjol. Sistem akan memberikan indikator warna otomatis (seperti teks menjadi merah) apabila batas waktu pengerjaan sudah lewat (*overdue*).
-* **Responsive Design**: Struktur kolom yang fleksibel dan adaptif, otomatis bertransformasi menjadi susunan vertikal (*stack*) apabila diakses melalui layar perangkat seluler untuk menjaga keterbacaan data.
+### 3. Manajemen Subtask (Sistem Kanban)
+Pembagian kerja dilakukan menggunakan sistem papan *Kanban* dengan 3 status: **To-Do**, **Ongoing**, dan **Done**.
+- **Delegasi Tugas:** Subtask dapat ditugaskan (di-*assign*) kepada anggota tim spesifik.
+- **Tingkat Prioritas:** Penanda visual prioritas (*Low* 🟢, *Medium* 🟡, *High* 🔴).
+- **Deadline Real-time:** Tenggat waktu menggunakan *countdown timer* interaktif:
+  - 🟢 **Hijau:** Waktu tersisa lebih dari 12 jam.
+  - 🟡 **Kuning:** Waktu tersisa 12 jam atau kurang.
+  - 🔴 **Merah:** Waktu tersisa 5 jam atau kurang (atau Overdue).
 
-### 4. Aspek Keamanan Dasar (Security)
-* **SQL Injection Prevention**: Seluruh operasi pemrosesan basis data wajib menggunakan mekanisme *PDO Prepared Statements*.
-* **XSS Prevention**: Input dari pengguna disanitasi secara ketat sebelum dirender ke layar guna menghindari celah keamanan *Cross-Site Scripting*.
-
----
-
-## 📁 Struktur Direktori Resmi (Directory Structure)
-
-ganbat/
-├── database/                   # Skrip basis data
-│   ├── 05_ERD.puml             # File source PlantUML untuk Entity Relationship Diagram (ERD)
-│   └── schema.sql              # Struktur tabel ekspor MySQL (users, tasks, dll.)
-├── public/                     # Web-accessible root (Diakses langsung oleh browser)
-│   ├── css/                    # Custom stylesheets tambahan
-│   ├── js/                     # Client-side JavaScript
-│   │   ├── main.js             # Script interaktif global
-│   │   └── countdown.js        # Logika hitung mundur real-time (Vanilla JS)
-│   ├── assets/                 # Berkas media pendukung (gambar, ikon, logo)
-│   ├── index.php               # Dashboard utama (Aplikasi Kanban Board)
-│   ├── login.php               # Antarmuka Formulir Login
-│   └── register.php            # Antarmuka Formulir Registrasi
-├── src/                        # Protected application code (Terproteksi internal)
-│   ├── config/                 # Konfigurasi koneksi database global
-│   │   └── database.php        # Instansiasi koneksi PDO basis data
-│   ├── controllers/            # Logika penanganan request & pemrosesan data (Backend)
-│   │   ├── AuthController.php  # Handler registrasi, login, dan autentikasi session
-│   │   ├── TaskController.php  # Handler CRUD tugas, update status, dan assignment
-│   │   └── CommentController.php # Handler pengelolaan komentar diskusi tugas
-│   ├── views/                  # Komponen presentasi antarmuka (UI Components)
-│   │   ├── layouts/            # Kerangka dasar struktur halaman web
-│   │   │   ├── header.php      # Tag pembuka HTML, meta tag, dan CDN Tailwind
-│   │   │   └── footer.php      # Tag penutup HTML dan pemanggilan skrip JS
-│   │   └── components/         # Potongan UI modular yang dapat digunakan kembali
-│   │       ├── navbar.php      # Komponen navigasi atas
-│   │       ├── board_column.php# Struktur kolom status Kanban board
-│   │       ├── task_card.php   # Desain kartu tugas dinamis
-│   │       └── comment_section.php # Komponen visual area komentar diskusi
-│   └── utils/                  # Fungsi bantuan utilitas
-│       └── helpers.php         # Fungsi format tanggal, validasi waktu, sanitasi input
-├── .gitignore                  # Daftar file penyaring tracking Git
-└── README.md                   # Dokumentasi utama proyek
+### 4. Pelacakan & Laporan
+- **My Task:** Halaman khusus ("Meja Kerja") yang merangkum seluruh subtask yang di-*assign* kepada pengguna dari berbagai proyek berbeda.
+- **Activity Log (Laporan):** Riwayat aktivitas yang otomatis mencatat pergerakan subtask (contoh: *[JUDUL PROJECT] - [User] sedang mengerjakan [Nama Subtask]*).
+- **Sistem Notifikasi:** Pemberitahuan otomatis (ikon lonceng) saat ada undangan proyek baru.
 
 ---
 
-## 📊 Entity Relationship Diagram (ERD)
+## 🚧 Fitur yang Belum Diimplementasikan (Future Works)
 
-Aplikasi **Ganbat** menggunakan skema basis data relasional berikut untuk mengelola data pengguna, tugas, pendelegasian, dan komentar. 
+Untuk presentasi, Anda dapat menyebutkan beberapa fitur berikut sebagai "Rencana Pengembangan Masa Depan" (Future Works):
+1. **Chat & Komentar Subtask:** Saat ini diskusi masih harus dilakukan di luar aplikasi (misalnya WhatsApp). Rencananya setiap subtask akan memiliki kolom komentar.
+2. **Lampiran File (Attachments):** Belum bisa mengunggah file (PDF, gambar, dokumen) langsung ke dalam subtask.
+3. **Grafik Analitik (Charts):** Halaman Laporan saat ini berupa *Activity Log* teks. Ke depannya dapat ditambahkan grafik *Burndown Chart* atau statistik produktivitas anggota.
+4. **Real-time WebSockets:** Notifikasi dan pergerakan *Kanban Board* saat ini memerlukan *refresh* halaman (kecuali timer *countdown* yang sudah real-time).
+5. **Email Integration:** Pemberitahuan via email belum tersedia.
 
-Berikut adalah visualisasi diagram hubungan entitas (ERD) dalam format PlantUML:
+---
 
-- **File Source PlantUML:** [database/05_ERD.puml](file:///d:/KULIAH/Semester4/PDW/PDWA-Ganbat-main/database/05_ERD.puml)
+## 🏗 Struktur Proyek (Arsitektur)
 
-```plantuml
-@startuml 05_ERD
-title Ganbat — Entity Relationship Diagram (ERD)
+Aplikasi ini dibangun menggunakan arsitektur **MVC (Model-View-Controller)** sederhana (Procedural PHP) untuk menjaga kebersihan kode:
 
-skinparam backgroundColor #1E1E2E
-skinparam entityBorderColor #7C6AF5
-skinparam entityBackgroundColor #2A2A3E
-skinparam entityFontColor #CCCCFF
-skinparam entityHeaderBackgroundColor #3A2A5E
-skinparam arrowColor #7C6AF5
-skinparam defaultFontName Helvetica
-skinparam defaultFontSize 12
-skinparam noteBorderColor #7C6AF5
-skinparam noteBackgroundColor #2E2E45
-skinparam noteFontColor #CCCCFF
-
-' ============================================================
-' ENTITAS
-' ============================================================
-
-entity "users" as Users {
-  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
-  --
-  * username : VARCHAR(255) <<UNIQUE>>
-  * password : VARCHAR(255)
-}
-
-entity "tasks" as Tasks {
-  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
-  --
-  * title         : VARCHAR(255)
-  ~ description   : TEXT
-  ~ priority      : VARCHAR(20)  [low|medium|high]\n                    DEFAULT 'medium'
-  ~ status        : VARCHAR(20)  [todo|doing|done]\n                    DEFAULT 'todo'
-  ~ deadline_date : DATE
-  * created_at    : TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
-  * updated_at    : TIMESTAMP    ON UPDATE CURRENT_TIMESTAMP
-}
-
-entity "task_assignees" as TaskAssignees {
-  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
-  --
-  * user_id    : INT(11) <<FK → users.id>>
-  * task_id    : INT(11) <<FK → tasks.id>>
-  * created_at : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-}
-
-entity "comments" as Comments {
-  * **id** : INT(11) <<PK>> <<AUTO_INCREMENT>>
-  --
-  * user_id      : INT(11) <<FK → users.id>>
-  * task_id      : INT(11) <<FK → tasks.id>>
-  ~ comment_text : TEXT
-  * created_at   : TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-}
-
-' ============================================================
-' RELASI
-' ============================================================
-
-' users — task_assignees (1..N)
-Users ||--o{ TaskAssignees : "1 user dapat\ndi-assign ke\nbanyak tugas"
-
-' tasks — task_assignees (1..N)
-Tasks ||--o{ TaskAssignees : "1 task dapat\ndimiliki banyak\nassignee"
-
-' users — comments (1..N)
-Users ||--o{ Comments : "1 user dapat\nmenulis banyak\nkomentar"
-
-' tasks — comments (1..N)
-Tasks ||--o{ Comments : "1 task dapat\nmemiliki banyak\nkomentar"
-
-' ============================================================
-' NOTES
-' ============================================================
-note bottom of Tasks
-  Kolom **priority** menerima nilai:
-  'low', 'medium', 'high'
-  Kolom **status** menerima nilai:
-  'todo', 'doing', 'done'
-end note
-
-note bottom of TaskAssignees
-  Tabel pivot (Many-to-Many)
-  antara users ↔ tasks.
-  ON DELETE CASCADE di kedua FK.
-end note
-
-note bottom of Comments
-  ON DELETE CASCADE di user_id
-  dan task_id.
-  Komentar terurut ASC by created_at.
-end note
-
-@enduml
+```text
+Ganbat-project/
+├── database/
+│   └── schema.sql          # File struktur database (6 tabel utama)
+├── public/                 # Root folder yang diakses oleh browser
+│   ├── assets/uploads/     # Direktori foto profil
+│   ├── css/style.css       # Hasil compile Tailwind CSS
+│   ├── js/                 # Script Vanilla JS (contoh: countdown.js, main.js)
+│   ├── index.php           # Redirector otomatis ke my_project.php
+│   ├── login.php & register.php
+│   ├── my_project.php      # Dashboard Utama (Daftar Proyek)
+│   ├── my_task.php         # Daftar tugas pribadi
+│   ├── arsip_project.php   # Daftar proyek yang diarsipkan
+│   ├── project_detail.php  # Tampilan dalam proyek (Kanban Board)
+│   └── laporan.php         # Riwayat aktivitas log
+├── src/
+│   ├── config/
+│   │   ├── database.php    # Koneksi PDO MySQL
+│   │   └── auth_guard.php  # Proteksi sesi pengguna
+│   ├── controllers/        # Logika bisnis (Routing aksi form)
+│   │   ├── AuthController.php
+│   │   ├── ProjectController.php
+│   │   ├── TaskController.php
+│   │   ├── InviteController.php
+│   │   ├── LeaderController.php
+│   │   └── ProfileController.php
+│   └── views/
+│       └── components/
+│           └── navbar.php  # Komponen Navigasi Global
+├── package.json            # Konfigurasi Node.js (untuk instalasi Tailwind)
+└── tailwind.config.js      # Konfigurasi Tema UI
 ```
 
-### Penjelasan Hubungan & Desain Database:
-- **Tabel `users`**: Berisi kredensial pengguna terdaftar (`username` bersifat unik).
-- **Tabel `tasks`**: Berisi detail setiap tugas termasuk tenggat waktu (`deadline_date`), prioritas (`low`, `medium`, `high`), dan status (`todo`, `doing`, `done`).
-- **Tabel `task_assignees`**: Pivot table yang memfasilitasi hubungan *Many-to-Many* antara `users` dan `tasks`, dengan relasi foreign key `ON DELETE CASCADE` untuk menjaga integritas data jika tugas atau pengguna dihapus.
-- **Tabel `comments`**: Menyimpan pesan diskusi untuk setiap tugas, terkait langsung dengan pengguna yang menulisnya.
+## 💻 Tech Stack (Teknologi yang Digunakan)
+
+1. **Front-End:** 
+   - HTML5 & CSS3
+   - **Tailwind CSS** (Utility-first framework untuk desain UI yang premium & responsif).
+   - Vanilla JavaScript (Tanpa framework JS besar, sangat ringan).
+2. **Back-End:**
+   - **PHP 8+** (Procedural & PDO untuk keamanan SQL Injection).
+3. **Database:**
+   - **MySQL** / MariaDB (Relational Database).
 
 ---
 
-## 📋 Prasyarat Sistem (Prerequisites)
+## 🚀 Panduan Menjalankan (Untuk Presentasi)
 
-Sebelum menjalankan aplikasi **Ganbat** secara lokal, pastikan perangkat Anda telah memenuhi spesifikasi berikut:
-* **PHP** >= 8.1
-* **MySQL** >= 8.0
-* **Apache Web Server** (Sudah termasuk di dalam paket Laragon / XAMPP)
-* **Ekstensi PHP Aktif**: `pdo_mysql` untuk konektivitas basis data relasional.
+1. Pastikan **XAMPP / MAMP** Anda berjalan (Apache & MySQL).
+2. Import file `database/schema.sql` ke dalam database `ganbat` via phpMyAdmin.
+3. Buka browser dan arahkan ke `http://localhost/Ganbat-project/public/login.php`.
+4. (Opsional untuk Developer): Jika melakukan perubahan tampilan CSS, jalankan *compiler* Tailwind dengan perintah: `npx tailwindcss -i ./src/input.css -o ./public/css/style.css`.
 
----
-
-## 🚀 Panduan Instalasi Lokal (Local Development Guide)
-
-### Langkah 1: Kloning Repositori Proyek
-Letakkan proyek ini pada direktori server lokal Anda (*document root*):
-```bash
-# Pengguna Laragon
-cd C:\laragon\www
-
-# Pengguna XAMPP
-cd C:\xampp\htdocs
-
-# Jalankan perintah kloning
-git clone https://github.com/spicyshibe/PDWA-Ganbat.git ganbat
-cd ganbat
-
-Langkah 2: Impor Basis Data (Database Setup)
-Buka aplikasi manajemen basis data Anda (seperti phpMyAdmin melalui tautan http://localhost/phpmyadmin).
-
-Buat sebuah basis data baru dengan nama ganbat_db.
-
-Pilih menu Import, cari berkas skema yang berada di folder proyek: database/schema.sql, kemudian klik Go / Kirim.
-
-Langkah 3: Konfigurasi Kredensial Basis Data
-Sesuaikan pengaturan kredensial MySQL lokal Anda di dalam berkas src/config/database.php:
-
-private static string $host     = 'localhost';
-private static string $dbName   = 'ganbat_db';
-private static string $username = 'root';
-private static string $password = ''; // 
-
-Isikan password jika MySQL lokal Anda memilikinya
-
-Langkah 4: Menjalankan Aplikasi
-Opsi A (Menggunakan Laragon/XAMPP): Aktifkan layanan Apache dan MySQL melalui control panel, lalu akses aplikasi menggunakan peramban melalui alamat: http://localhost/ganbat/public/index.php.
-
-Opsi B (Menggunakan PHP Built-in Server): Jalankan perintah berikut pada terminal di dalam folder utama proyek:
-
-php -S localhost:8000 -t public
-
-Kemudian buka browser Anda dan akses alamat http://localhost:8000
+> *Proyek ini siap untuk didemonstrasikan! Ganbatte!* 🔥
