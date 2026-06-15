@@ -93,7 +93,7 @@ if ($task['status'] === 'todo') {
 
 <<<<<<< HEAD
     <?php if ($canUpdate && $nextStatus !== null): ?>
-        <form action="/src/controllers/update_subtask_status.php" method="POST">
+        <form action="../src/controllers/update_subtask_status.php" method="POST">
             <input
                 type="hidden"
                 name="subtask_id"

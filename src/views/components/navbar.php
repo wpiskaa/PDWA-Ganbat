@@ -77,11 +77,11 @@ $nav_profile_picture = $_SESSION['profile_picture'] ?? '';
                 </button>
 
                 <div id="user-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-dark-800 border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden z-50">
-                    <a href="/Ganbat-project/public/profile.php" class="block px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/40 hover:text-white transition-colors">
+                    <a href="../public/profile.php" class="block px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700/40 hover:text-white transition-colors">
                         👤 Profil Saya
                     </a>
                     <hr class="border-slate-700/60">
-                    <a href="/Ganbat-project/src/controllers/AuthController.php?action=logout"
+                    <a href="../src/controllers/AuthController.php?action=logout"
                        class="block px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors">
                         🚪 Logout
                     </a>
@@ -113,7 +113,7 @@ document.addEventListener('click', function(e) {
 });
 
 function fetchNotifications() {
-    fetch('/Ganbat-project/src/controllers/NotificationController.php?action=get_notifications')
+    fetch('../src/controllers/NotificationController.php?action=get_notifications')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.success) return;
@@ -138,12 +138,12 @@ function fetchNotifications() {
 
                 if (n.type === 'invite' && isUnread) {
                     actions = '<div class="flex gap-2 mt-2">' +
-                        '<form method="POST" action="/Ganbat-project/src/controllers/NotificationController.php" class="inline">' +
+                        '<form method="POST" action="../src/controllers/NotificationController.php" class="inline">' +
                             '<input type="hidden" name="action" value="accept_invite">' +
                             '<input type="hidden" name="notification_id" value="' + n.id + '">' +
                             '<button class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg">Terima</button>' +
                         '</form>' +
-                        '<form method="POST" action="/Ganbat-project/src/controllers/NotificationController.php" class="inline">' +
+                        '<form method="POST" action="../src/controllers/NotificationController.php" class="inline">' +
                             '<input type="hidden" name="action" value="decline_invite">' +
                             '<input type="hidden" name="notification_id" value="' + n.id + '">' +
                             '<button class="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg">Tolak</button>' +
@@ -162,26 +162,33 @@ function fetchNotifications() {
 }
 
 function markAllRead() {
-    fetch('/Ganbat-project/src/controllers/NotificationController.php?action=mark_all_read')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                document.getElementById('notif-badge').classList.add('hidden');
-                fetchNotifications();
-            }
+    fetch('../src/controllers/NotificationController.php?action=mark_all_read')
+        .then(() => {
+            fetchNotifications();
+            document.getElementById('notif-badge').classList.add('hidden');
         });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetch('/Ganbat-project/src/controllers/NotificationController.php?action=get_notifications')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success && data.unread_count > 0) {
-                var badge = document.getElementById('notif-badge');
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('user-menu-container').contains(e.target)) {
+        document.getElementById('user-menu').classList.add('hidden');
+    }
+    if (!document.getElementById('notif-container').contains(e.target)) {
+        document.getElementById('notif-dropdown').classList.add('hidden');
+    }
+});
+
+// Initial load for badge
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('../src/controllers/NotificationController.php?action=get_notifications')
+        .then(res => res.json())
+        .then(data => {
+            if (data.unread_count > 0) {
+                const badge = document.getElementById('notif-badge');
                 badge.textContent = data.unread_count;
                 badge.classList.remove('hidden');
             }
-        })
-        .catch(function() {});
+        });
 });
 </script>
