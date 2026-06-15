@@ -13,7 +13,7 @@ $nav_profile_picture = $_SESSION['profile_picture'] ?? '';
     <div class="max-w-screen-xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
 
         <!-- Left: Brand -->
-        <a href="/Ganbat-project/public/my_project.php" class="flex items-center gap-2.5">
+        <a href="my_project.php" class="flex items-center gap-2.5">
             <div class="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-600/20">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -68,7 +68,7 @@ $nav_profile_picture = $_SESSION['profile_picture'] ?? '';
                 <button onclick="toggleUserMenu()" class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-700/40 transition-all">
                     <div class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-sm font-bold overflow-hidden">
                         <?php if ($nav_profile_picture): ?>
-                            <img src="/Ganbat-project/public/<?= htmlspecialchars($nav_profile_picture) ?>" class="w-full h-full object-cover" alt="Avatar">
+                            <img src="<?= htmlspecialchars($nav_profile_picture) ?>" class="w-full h-full object-cover" alt="Avatar">
                         <?php else: ?>
                             <?= strtoupper(substr($nav_username, 0, 1)) ?>
                         <?php endif; ?>
